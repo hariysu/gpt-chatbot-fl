@@ -29,6 +29,10 @@ class _ChatScreenState extends State<ChatScreen> {
     _listScrollController = ScrollController();
     textEditingController = TextEditingController();
     focusNode = FocusNode();
+    // Scrolls after the page is loaded
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _scrollToBottom();
+    });
     super.initState();
   }
 
@@ -135,10 +139,10 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
-  void scrollListToEND() {
+  void _scrollToBottom() {
     _listScrollController.animateTo(
         _listScrollController.position.maxScrollExtent,
-        duration: const Duration(seconds: 2),
+        duration: const Duration(seconds: 1),
         curve: Curves.easeOut);
   }
 
@@ -189,7 +193,7 @@ class _ChatScreenState extends State<ChatScreen> {
       ));
     } finally {
       setState(() {
-        scrollListToEND();
+        _scrollToBottom();
         _isTyping = false;
       });
     }
