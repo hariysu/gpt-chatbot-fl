@@ -76,6 +76,7 @@ class _ChatScreenState extends State<ChatScreen> {
           children: [
             Flexible(
               child: ListView.builder(
+                  padding: const EdgeInsets.only(bottom: 10),
                   controller: _listScrollController,
                   itemCount: chatProvider.getChatList.length, //chatList.length,
                   itemBuilder: (context, index) {
@@ -92,7 +93,7 @@ class _ChatScreenState extends State<ChatScreen> {
             if (_isTyping) ...[
               LoadingAnimationWidget.waveDots(color: Colors.white, size: 30)
             ],
-            const SizedBox(height: 10),
+            const SizedBox(height: 20),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 10),
               child: Material(
@@ -114,20 +115,21 @@ class _ChatScreenState extends State<ChatScreen> {
                                 chatProvider: chatProvider);
                           },
                           decoration: const InputDecoration.collapsed(
-                              hintText: "How can I help you",
+                              hintText: "How can I help you?",
                               hintStyle: TextStyle(color: Colors.grey)),
                         ),
                       ),
                       IconButton(
-                          onPressed: () async {
-                            await sendMessageFCT(
-                                modelsProvider: modelsProvider,
-                                chatProvider: chatProvider);
-                          },
-                          icon: const Icon(
-                            Icons.send,
-                            color: Colors.white,
-                          ))
+                        onPressed: () async {
+                          await sendMessageFCT(
+                              modelsProvider: modelsProvider,
+                              chatProvider: chatProvider);
+                        },
+                        icon: const Icon(
+                          Icons.send,
+                          color: Colors.white,
+                        ),
+                      )
                     ],
                   ),
                 ),
@@ -193,7 +195,10 @@ class _ChatScreenState extends State<ChatScreen> {
       ));
     } finally {
       setState(() {
-        _scrollToBottom();
+        // Scrolls after the page is loaded
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _scrollToBottom();
+        });
         _isTyping = false;
       });
     }
