@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'dart:developer';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:gpt_chatbot/constants/const.dart';
@@ -25,6 +27,7 @@ class _ChatScreenState extends State<ChatScreen> {
   late TextEditingController textEditingController;
   late ScrollController _listScrollController;
   late FocusNode focusNode;
+  File? _imageFile;
   @override
   void initState() {
     _listScrollController = ScrollController();
@@ -105,7 +108,11 @@ class _ChatScreenState extends State<ChatScreen> {
                   padding: const EdgeInsets.all(8.0),
                   child: Row(
                     children: [
+                      _imageFile != null
+                          ? Expanded(flex: 1, child: Image.file(_imageFile!))
+                          : Container(),
                       Expanded(
+                        flex: 2,
                         child: TextField(
                           focusNode: focusNode,
                           style: const TextStyle(color: Colors.white),
@@ -122,10 +129,20 @@ class _ChatScreenState extends State<ChatScreen> {
                       ),
                       IconButton(
                         onPressed: () async {
-                          final XFile? image = await ImagePicker()
+                          final XFile? pickedImage = await ImagePicker()
                               .pickImage(source: ImageSource.gallery);
-                          if (image != null) {
-                            print("sample");
+                          if (pickedImage != null) {
+                            setState(() {
+                              _imageFile = File(pickedImage.path);
+                            });
+                            if (_imageFile == null) return;
+
+                            // Convert image to base64
+                            final bytes = _imageFile!.readAsBytesSync();
+                            String base64Image = base64Encode(bytes);
+                            print(base64Image);
+                          } else {
+                            print('No image selected.');
                           }
                         },
                         icon: const Icon(
