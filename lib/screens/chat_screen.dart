@@ -5,6 +5,7 @@ import 'package:gpt_chatbot/constants/const.dart';
 import 'package:gpt_chatbot/providers/chat_provider.dart';
 import 'package:gpt_chatbot/services/services.dart';
 import 'package:gpt_chatbot/widgets/chat_widget.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
 import 'package:provider/provider.dart';
 
@@ -121,6 +122,19 @@ class _ChatScreenState extends State<ChatScreen> {
                       ),
                       IconButton(
                         onPressed: () async {
+                          final XFile? image = await ImagePicker()
+                              .pickImage(source: ImageSource.gallery);
+                          if (image != null) {
+                            print("sample");
+                          }
+                        },
+                        icon: const Icon(
+                          Icons.image,
+                          color: Colors.white,
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () async {
                           await sendMessageFCT(
                               modelsProvider: modelsProvider,
                               chatProvider: chatProvider);
@@ -129,7 +143,7 @@ class _ChatScreenState extends State<ChatScreen> {
                           Icons.send,
                           color: Colors.white,
                         ),
-                      )
+                      ),
                     ],
                   ),
                 ),

@@ -41,6 +41,7 @@ dependencies:
   animated_text_kit: ^4.2.2
   loading_animation_widget: ^1.2.1
   bubble: ^1.2.1
+  image_picker: ^1.0.4
 
 
 dev_dependencies:
