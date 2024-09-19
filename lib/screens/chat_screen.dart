@@ -109,7 +109,32 @@ class _ChatScreenState extends State<ChatScreen> {
                   child: Row(
                     children: [
                       _imageFile != null
-                          ? Expanded(flex: 1, child: Image.file(_imageFile!))
+                          ? Expanded(
+                              flex: 1,
+                              child: Stack(
+                                clipBehavior: Clip.none,
+                                children: [
+                                  Image.file(_imageFile!),
+                                  Positioned(
+                                    top: -20,
+                                    right: -25,
+                                    child: ElevatedButton(
+                                      onPressed: () {
+                                        setState(() {
+                                          _imageFile = null;
+                                        });
+                                      },
+                                      style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.red,
+                                          shape: const CircleBorder(),
+                                          minimumSize: Size(30, 30)),
+                                      child: const Icon(Icons.close,
+                                          color: Colors.white),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            )
                           : Container(),
                       Expanded(
                         flex: 2,
