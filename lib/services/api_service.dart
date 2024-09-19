@@ -59,6 +59,7 @@ class ApiService {
           },
         ),
       );
+      print(jsonDecode(response.body));
       // Map jsonResponse = jsonDecode(response.body);
       Map jsonResponse = json.decode(utf8.decode(response.bodyBytes));
       if (jsonResponse['error'] != null) {
