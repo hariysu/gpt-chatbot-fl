@@ -114,7 +114,12 @@ class _ChatScreenState extends State<ChatScreen> {
                               child: Stack(
                                 clipBehavior: Clip.none,
                                 children: [
-                                  Image.file(_imageFile!),
+                                  Image.file(
+                                    _imageFile!,
+                                    fit: BoxFit.cover,
+                                    width: 200,
+                                    height: 100,
+                                  ),
                                   Positioned(
                                     top: -20,
                                     right: -25,
@@ -127,7 +132,7 @@ class _ChatScreenState extends State<ChatScreen> {
                                       style: ElevatedButton.styleFrom(
                                           backgroundColor: Colors.red,
                                           shape: const CircleBorder(),
-                                          minimumSize: Size(30, 30)),
+                                          minimumSize: const Size(30, 30)),
                                       child: const Icon(Icons.close,
                                           color: Colors.white),
                                     ),
@@ -137,19 +142,22 @@ class _ChatScreenState extends State<ChatScreen> {
                             )
                           : Container(),
                       Expanded(
-                        flex: 2,
-                        child: TextField(
-                          focusNode: focusNode,
-                          style: const TextStyle(color: Colors.white),
-                          controller: textEditingController,
-                          onSubmitted: (value) async {
-                            await sendMessageFCT(
-                                modelsProvider: modelsProvider,
-                                chatProvider: chatProvider);
-                          },
-                          decoration: const InputDecoration.collapsed(
-                              hintText: "How can I help you?",
-                              hintStyle: TextStyle(color: Colors.grey)),
+                        flex: 4,
+                        child: Padding(
+                          padding: const EdgeInsets.only(left: 8.0),
+                          child: TextField(
+                            focusNode: focusNode,
+                            style: const TextStyle(color: Colors.white),
+                            controller: textEditingController,
+                            onSubmitted: (value) async {
+                              await sendMessageFCT(
+                                  modelsProvider: modelsProvider,
+                                  chatProvider: chatProvider);
+                            },
+                            decoration: const InputDecoration.collapsed(
+                                hintText: "How can I help you?",
+                                hintStyle: TextStyle(color: Colors.grey)),
+                          ),
                         ),
                       ),
                       IconButton(
