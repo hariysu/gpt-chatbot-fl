@@ -10,8 +10,9 @@ class ChatProvider with ChangeNotifier {
   }
 
   // Adds user messages to the chatList
-  void addUserMessage({required String msg}) {
-    chatList.add(ChatModel(msg: msg, chatIndex: 0));
+  void addUserMessage({required String msg, String? base64Image}) {
+    chatList
+        .add(ChatModel(msg: msg, chatIndex: 0, base64Image: base64Image ?? ""));
     notifyListeners();
   }
 

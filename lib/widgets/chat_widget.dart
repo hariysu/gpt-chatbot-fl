@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:animated_text_kit/animated_text_kit.dart';
 import 'package:bubble/bubble.dart';
 import 'package:flutter/material.dart';
@@ -8,13 +10,18 @@ class ChatWidget extends StatelessWidget {
       {super.key,
       required this.msg,
       required this.chatIndex,
-      this.shouldAnimate = false});
+      this.shouldAnimate = false,
+      this.image = ""});
 
   final String msg;
   final int chatIndex;
   final bool shouldAnimate;
+  final String? image;
+
   @override
   Widget build(BuildContext context) {
+    // Convert Base64 data into Uint8List
+    final bytes = base64Decode(image ?? "");
     return Column(
       children: [
         Material(
@@ -31,9 +38,21 @@ class ChatWidget extends StatelessWidget {
                       showNip: true,
                       nip: BubbleNip.rightBottom,
                       radius: const Radius.circular(10.0),
-                      child: Text(
-                        msg,
-                        style: const TextStyle(fontSize: 16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (image != "")
+                            Image.memory(
+                              bytes,
+                              fit: BoxFit.cover,
+                              width: 200,
+                              height: 200,
+                            ),
+                          Text(
+                            msg,
+                            style: const TextStyle(fontSize: 16),
+                          ),
+                        ],
                       ),
                     )
                   : shouldAnimate // animated last message

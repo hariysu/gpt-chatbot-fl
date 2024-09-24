@@ -28,6 +28,8 @@ class _ChatScreenState extends State<ChatScreen> {
   late ScrollController _listScrollController;
   late FocusNode focusNode;
   File? _imageFile;
+
+  String? base64Image;
   @override
   void initState() {
     _listScrollController = ScrollController();
@@ -91,6 +93,7 @@ class _ChatScreenState extends State<ChatScreen> {
                           .chatIndex, //chatList[index].chatIndex,
                       shouldAnimate:
                           chatProvider.getChatList.length - 1 == index,
+                      image: chatProvider.getChatList[index].base64Image,
                     );
                   }),
             ),
@@ -127,6 +130,7 @@ class _ChatScreenState extends State<ChatScreen> {
                                       onPressed: () {
                                         setState(() {
                                           _imageFile = null;
+                                          base64Image = null;
                                         });
                                       },
                                       style: ElevatedButton.styleFrom(
@@ -172,8 +176,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
                             // Convert image to base64
                             final bytes = _imageFile!.readAsBytesSync();
-                            String base64Image = base64Encode(bytes);
-                            print(base64Image);
+                            base64Image = base64Encode(bytes);
                           } else {
                             print('No image selected.');
                           }
@@ -188,6 +191,10 @@ class _ChatScreenState extends State<ChatScreen> {
                           await sendMessageFCT(
                               modelsProvider: modelsProvider,
                               chatProvider: chatProvider);
+                          setState(() {
+                            base64Image = null;
+                            _imageFile = null;
+                          });
                         },
                         icon: const Icon(
                           Icons.send,
@@ -242,7 +249,7 @@ class _ChatScreenState extends State<ChatScreen> {
       setState(() {
         _isTyping = true;
         // chatList.add(ChatModel(msg: textEditingController.text, chatIndex: 0));
-        chatProvider.addUserMessage(msg: msg);
+        chatProvider.addUserMessage(msg: msg, base64Image: base64Image);
         textEditingController.clear();
         focusNode.unfocus();
       });
