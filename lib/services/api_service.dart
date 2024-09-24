@@ -83,6 +83,63 @@ class ApiService {
     }
   }
 
+  // Send Message with images
+  static Future<List<ChatModel>> sendMessageWithImages(
+      {required String message,
+      required String modelId,
+      required String base64Image}) async {
+    try {
+      log("modelId $modelId");
+      var response = await http.post(
+        Uri.parse("$baseUrl/chat/completions"),
+        headers: {
+          'Authorization': 'Bearer $apiKey',
+          "Content-Type": "application/json"
+        },
+        body: jsonEncode(
+          {
+            "model": modelId,
+            "messages": [
+              {
+                "role": "user",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": message,
+                  },
+                  {
+                    "type": "image_url",
+                    "image_url": {"url": "data:image/jpeg;base64,$base64Image"}
+                  }
+                ],
+              }
+            ]
+          },
+        ),
+      );
+      Map jsonResponse = json.decode(utf8.decode(response.bodyBytes));
+      if (jsonResponse['error'] != null) {
+        // print("jsonResponse['error'] ${jsonResponse['error']["message"]}");
+        throw HttpException(jsonResponse['error']["message"]);
+      }
+      List<ChatModel> chatList = [];
+      if (jsonResponse["choices"].length > 0) {
+        //log("jsonResponse[choices]text ${jsonResponse["choices"][0]["text"]}");
+        chatList = List.generate(
+          jsonResponse["choices"].length,
+          (index) => ChatModel(
+            msg: jsonResponse["choices"][index]["message"]["content"],
+            chatIndex: 1,
+          ),
+        );
+      }
+      return chatList;
+    } catch (error) {
+      log("error $error");
+      rethrow;
+    }
+  }
+
   // Send Message using ChatGPT API legacy models (/v1/completions (Legacy))
   // gpt-3.5-turbo-instruct,  babbage-002,  davinci-002
   static Future<List<ChatModel>> sendMessage(

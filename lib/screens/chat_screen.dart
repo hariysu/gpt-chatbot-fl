@@ -193,7 +193,7 @@ class _ChatScreenState extends State<ChatScreen> {
                               chatProvider: chatProvider);
                           setState(() {
                             base64Image = null;
-                            _imageFile = null;
+                            //_imageFile = null;
                           });
                         },
                         icon: const Icon(
@@ -252,10 +252,17 @@ class _ChatScreenState extends State<ChatScreen> {
         chatProvider.addUserMessage(msg: msg, base64Image: base64Image);
         textEditingController.clear();
         focusNode.unfocus();
+        _imageFile = null;
+        // Scrolls after user message printed to screen
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          _scrollToBottom();
+        });
       });
       await chatProvider.sendMessageAndGetAnswers(
-          msg: msg, chosenModelId: modelsProvider.getCurrentModel);
-      setState(() {});
+          msg: msg,
+          chosenModelId: modelsProvider.getCurrentModel,
+          base64Image: base64Image ?? "");
+      /*setState(() {});*/
     } catch (error) {
       log("error $error");
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(

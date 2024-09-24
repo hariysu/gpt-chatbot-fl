@@ -18,8 +18,16 @@ class ChatProvider with ChangeNotifier {
 
   // Adds GPT responses to the chatList
   Future<void> sendMessageAndGetAnswers(
-      {required String msg, required String chosenModelId}) async {
-    if (chosenModelId.toLowerCase().startsWith("gpt")) {
+      {required String msg,
+      required String chosenModelId,
+      required String base64Image}) async {
+    // Only for messages with images except dall-e
+    if (chosenModelId.toLowerCase().startsWith("gpt-4") && base64Image != "") {
+      List<ChatModel> chatListWithImages =
+          await ApiService.sendMessageWithImages(
+              message: msg, modelId: chosenModelId, base64Image: base64Image);
+      chatList.addAll(chatListWithImages);
+    } else if (chosenModelId.toLowerCase().startsWith("gpt")) {
       List<ChatModel> chatListLive =
           await ApiService.sendMessageGPT(message: msg, modelId: chosenModelId);
       chatList.addAll(chatListLive);
