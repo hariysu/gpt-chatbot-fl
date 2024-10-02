@@ -10,6 +10,8 @@ import 'package:gpt_chatbot/widgets/chat_widget.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
 import 'package:provider/provider.dart';
+import 'package:speech_to_text/speech_recognition_result.dart';
+import 'package:speech_to_text/speech_to_text.dart';
 
 import '../providers/models_provider.dart';
 import '../widgets/text_widget.dart';
@@ -30,6 +32,10 @@ class _ChatScreenState extends State<ChatScreen> {
   File? _imageFile;
 
   String? base64Image;
+
+  SpeechToText speech = SpeechToText();
+  bool _isListening = false;
+
   @override
   void initState() {
     _listScrollController = ScrollController();
@@ -39,6 +45,7 @@ class _ChatScreenState extends State<ChatScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _scrollToBottom();
     });
+    _initSpeech();
     super.initState();
   }
 
@@ -165,6 +172,24 @@ class _ChatScreenState extends State<ChatScreen> {
                         ),
                       ),
                       IconButton(
+                        onPressed:
+                            _isListening ? _stopListening : _startListening,
+                        /*() async {
+                          await sendMessageFCT(
+                              modelsProvider: modelsProvider,
+                              chatProvider: chatProvider);
+                          setState(() {
+                            base64Image = null;
+                            //_imageFile = null;
+                          });
+
+                        },*/
+                        icon: Icon(
+                          _isListening ? Icons.mic : Icons.mic_none,
+                          color: Colors.white,
+                        ),
+                      ),
+                      IconButton(
                         onPressed: () async {
                           final XFile? pickedImage = await ImagePicker()
                               .pickImage(source: ImageSource.gallery);
@@ -262,7 +287,6 @@ class _ChatScreenState extends State<ChatScreen> {
           msg: msg,
           chosenModelId: modelsProvider.getCurrentModel,
           base64Image: base64Image ?? "");
-      /*setState(() {});*/
     } catch (error) {
       log("error $error");
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -280,5 +304,38 @@ class _ChatScreenState extends State<ChatScreen> {
         _isTyping = false;
       });
     }
+  }
+
+  Future<void> _initSpeech() async {
+    speech = SpeechToText();
+    await speech.initialize();
+    setState(() {});
+  }
+
+  Future _startListening() async {
+    await speech.listen(
+      onResult: _onSpeechResult,
+      listenFor: Duration(seconds: 10),
+    );
+    setState(() {
+      _isListening = true;
+    });
+    print("sample0");
+  }
+
+  void _stopListening() async {
+    await speech.stop();
+    setState(() {
+      _isListening = false;
+    });
+    print("sample1");
+  }
+
+  void _onSpeechResult(SpeechRecognitionResult result) {
+    print("sample2");
+    setState(() {
+      String text = result.recognizedWords;
+      print(text);
+    });
   }
 }
