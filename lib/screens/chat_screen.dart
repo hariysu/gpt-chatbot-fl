@@ -42,13 +42,8 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   void initState() {
-    _listScrollController = ScrollController();
-    textEditingController = TextEditingController();
-    focusNode = FocusNode();
-    // Scrolls after the page is loaded
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _scrollToBottom();
-    });
+    _initializeControllers();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
     _initSpeech();
     super.initState();
   }
@@ -61,10 +56,14 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   void dispose() {
+    _disposeControllers();
+    super.dispose();
+  }
+
+  void _disposeControllers() {
     _listScrollController.dispose();
     textEditingController.dispose();
     focusNode.dispose();
-    super.dispose();
   }
 
   @override
@@ -74,22 +73,18 @@ class _ChatScreenState extends State<ChatScreen> {
     return Scaffold(
       appBar: AppBar(
         elevation: 20,
-        leading: const Icon(
-          Icons.menu_rounded,
-          color: Colors.white,
-        ),
-        title: const Text(
-          "GPT Chatbot",
-          style: TextStyle(
-              color: Colors.white, fontWeight: FontWeight.w600, fontSize: 25),
-        ),
+        leading: const Icon(Icons.menu_rounded, color: Colors.white),
+        title: const Text("GPT Chatbot",
+            style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w600,
+                fontSize: 25)),
         toolbarHeight: 60,
         centerTitle: true,
         actions: [
           IconButton(
-            onPressed: () async {
-              await Services.showModalSheet(context: context);
-            },
+            onPressed: () async =>
+                await Services.showModalSheet(context: context),
             icon: const Icon(Icons.more_vert_rounded, color: Colors.white),
           ),
         ],
@@ -128,40 +123,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   padding: const EdgeInsets.all(8.0),
                   child: Row(
                     children: [
-                      _imageFile != null
-                          ? Expanded(
-                              flex: 1,
-                              child: Stack(
-                                clipBehavior: Clip.none,
-                                children: [
-                                  Image.file(
-                                    _imageFile!,
-                                    fit: BoxFit.cover,
-                                    width: 200,
-                                    height: 100,
-                                  ),
-                                  Positioned(
-                                    top: -20,
-                                    right: -25,
-                                    child: ElevatedButton(
-                                      onPressed: () {
-                                        setState(() {
-                                          _imageFile = null;
-                                          base64Image = null;
-                                        });
-                                      },
-                                      style: ElevatedButton.styleFrom(
-                                          backgroundColor: Colors.red,
-                                          shape: const CircleBorder(),
-                                          minimumSize: const Size(30, 30)),
-                                      child: const Icon(Icons.close,
-                                          color: Colors.white),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            )
-                          : Container(),
+                      _buildImagePreview(),
                       Expanded(
                         flex: 4,
                         child: Padding(
@@ -170,72 +132,16 @@ class _ChatScreenState extends State<ChatScreen> {
                             focusNode: focusNode,
                             style: const TextStyle(color: Colors.white),
                             controller: textEditingController,
-                            onSubmitted: (value) async {
-                              await sendMessageFCT(
-                                  modelsProvider: modelsProvider,
-                                  chatProvider: chatProvider);
-                            },
+                            onSubmitted: (_) => _handleMessageSubmission(),
                             decoration: const InputDecoration.collapsed(
                                 hintText: "How can I help you?",
                                 hintStyle: TextStyle(color: Colors.grey)),
                           ),
                         ),
                       ),
-                      IconButton(
-                        onPressed:
-                            _isListening ? _stopListening : _startListening,
-                        /*() async {
-                          await sendMessageFCT(
-                              modelsProvider: modelsProvider,
-                              chatProvider: chatProvider);
-                          setState(() {
-                            base64Image = null;
-                            //_imageFile = null;
-                          });
-
-                        },*/
-                        icon: Icon(
-                          _isListening ? Icons.mic : Icons.mic_none,
-                          color: Colors.white,
-                        ),
-                      ),
-                      IconButton(
-                        onPressed: () async {
-                          final XFile? pickedImage = await ImagePicker()
-                              .pickImage(source: ImageSource.gallery);
-                          if (pickedImage != null) {
-                            setState(() {
-                              _imageFile = File(pickedImage.path);
-                            });
-                            if (_imageFile == null) return;
-
-                            // Convert image to base64
-                            final bytes = _imageFile!.readAsBytesSync();
-                            base64Image = base64Encode(bytes);
-                          } else {
-                            print('No image selected.');
-                          }
-                        },
-                        icon: const Icon(
-                          Icons.image,
-                          color: Colors.white,
-                        ),
-                      ),
-                      IconButton(
-                        onPressed: () async {
-                          await sendMessageFCT(
-                              modelsProvider: modelsProvider,
-                              chatProvider: chatProvider);
-                          setState(() {
-                            base64Image = null;
-                            //_imageFile = null;
-                          });
-                        },
-                        icon: const Icon(
-                          Icons.send,
-                          color: Colors.white,
-                        ),
-                      ),
+                      _buildMicButton(),
+                      _buildImagePickerButton(),
+                      _buildSendButton(),
                     ],
                   ),
                 ),
@@ -247,6 +153,94 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
+  Widget _buildImagePreview() {
+    return _imageFile != null
+        ? Expanded(
+            flex: 1,
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Image.file(
+                  _imageFile!,
+                  fit: BoxFit.cover,
+                  width: 200,
+                  height: 100,
+                ),
+                Positioned(
+                  top: -20,
+                  right: -25,
+                  child: ElevatedButton(
+                    onPressed: _clearImage,
+                    style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                        shape: const CircleBorder(),
+                        minimumSize: const Size(30, 30)),
+                    child: const Icon(Icons.close, color: Colors.white),
+                  ),
+                ),
+              ],
+            ),
+          )
+        : Container();
+  }
+
+  void _clearImage() {
+    setState(() {
+      _imageFile = null;
+      base64Image = null;
+    });
+  }
+
+  Widget _buildMicButton() {
+    return IconButton(
+      onPressed: _isListening ? _stopListening : _startListening,
+      icon:
+          Icon(_isListening ? Icons.mic : Icons.mic_none, color: Colors.white),
+    );
+  }
+
+  Widget _buildImagePickerButton() {
+    return IconButton(
+      onPressed: _pickImageFromGallery,
+      icon: const Icon(
+        Icons.image,
+        color: Colors.white,
+      ),
+    );
+  }
+
+  void _pickImageFromGallery() async {
+    final XFile? pickedImage =
+        await ImagePicker().pickImage(source: ImageSource.gallery);
+    if (pickedImage != null) {
+      setState(() {
+        _imageFile = File(pickedImage.path);
+        /*if (_imageFile == null) return;*/
+        // Convert image to base64
+        base64Image = base64Encode(_imageFile!.readAsBytesSync());
+      });
+    } else {
+      print('No image selected.');
+    }
+  }
+
+  Widget _buildSendButton() {
+    return IconButton(
+      onPressed: () async {
+        await _sendMessageFCT(
+            modelsProvider: modelsProvider, chatProvider: chatProvider);
+        setState(() {
+          base64Image = null;
+          //_imageFile = null;
+        });
+      },
+      icon: const Icon(
+        Icons.send,
+        color: Colors.white,
+      ),
+    );
+  }
+
   void _scrollToBottom() {
     _listScrollController.animateTo(
         _listScrollController.position.maxScrollExtent,
@@ -254,68 +248,67 @@ class _ChatScreenState extends State<ChatScreen> {
         curve: Curves.easeOut);
   }
 
-  Future<void> sendMessageFCT(
+  Future<void> _handleMessageSubmission() async {
+    await _sendMessageFCT(
+        modelsProvider: modelsProvider, chatProvider: chatProvider);
+    setState(() {
+      base64Image = null;
+    });
+  }
+
+  Future<void> _sendMessageFCT(
       {required ModelsProvider modelsProvider,
       required ChatProvider chatProvider}) async {
     if (_isTyping) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: TextWidget(
-            label: "You can't send multiple messages at a time",
-          ),
-          backgroundColor: Colors.red,
-        ),
-      );
+      _showErrorSnackBar("You can't send multiple messages at a time");
       return;
     }
-    if (textEditingController.text.isEmpty && textOfSpeech == "") {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: TextWidget(
-            label: "Please type a message",
-          ),
-          backgroundColor: Colors.red,
-        ),
-      );
+    if (textEditingController.text.isEmpty && textOfSpeech.isEmpty) {
+      _showErrorSnackBar("Please type a message");
       return;
     }
     try {
-      String msg = textEditingController.text == ""
+      // Use text of speech as a message when text input is empty
+      String msg = textEditingController.text.isEmpty
           ? textOfSpeech
           : textEditingController.text;
-      setState(() {
-        _isTyping = true;
-        // chatList.add(ChatModel(msg: textEditingController.text, chatIndex: 0));
-        chatProvider.addUserMessage(msg: msg, base64Image: base64Image);
-        textEditingController.clear();
-        focusNode.unfocus();
-        _imageFile = null;
-        // Scrolls after user message printed to screen
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          _scrollToBottom();
-        });
-      });
+      _prepareForNewMessage(msg);
       await chatProvider.sendMessageAndGetAnswers(
           msg: msg,
           chosenModelId: modelsProvider.getCurrentModel,
           base64Image: base64Image ?? "");
     } catch (error) {
       log("error $error");
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: TextWidget(
-          label: error.toString(),
-        ),
-        backgroundColor: Colors.red,
-      ));
+      _showErrorSnackBar(error.toString());
     } finally {
       setState(() {
-        // Scrolls after the page is loaded
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          _scrollToBottom();
-        });
         _isTyping = false;
+        // Scrolls after the page is loaded
+        _scrollToBottom();
       });
     }
+  }
+
+  void _prepareForNewMessage(String msg) {
+    return setState(() {
+      _isTyping = true;
+      // chatList.add(ChatModel(msg: textEditingController.text, chatIndex: 0));
+      chatProvider.addUserMessage(msg: msg, base64Image: base64Image);
+      textEditingController.clear();
+      focusNode.unfocus();
+      _imageFile = null;
+      // Scrolls after user message printed to screen
+      _scrollToBottom();
+    });
+  }
+
+  void _showErrorSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: TextWidget(label: message),
+        backgroundColor: Colors.red,
+      ),
+    );
   }
 
   Future<void> _initSpeech() async {
@@ -337,11 +330,8 @@ class _ChatScreenState extends State<ChatScreen> {
 
   void _stopListening() async {
     await speech.stop();
-    setState(() {
-      _isListening = false;
-    });
-    await sendMessageFCT(
-        modelsProvider: modelsProvider, chatProvider: chatProvider);
+    setState(() => _isListening = false);
+    _handleMessageSubmission();
   }
 
   void _onSpeechResult(SpeechRecognitionResult result) {
