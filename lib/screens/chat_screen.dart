@@ -316,6 +316,7 @@ class _ChatScreenState extends State<ChatScreen> {
     await speech.listen(
       onResult: _onSpeechResult,
       //listenFor: Duration(seconds: 10),
+      localeId: 'tr_TR',
     );
     setState(() {
       _isListening = true;
