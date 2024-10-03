@@ -315,7 +315,7 @@ class _ChatScreenState extends State<ChatScreen> {
   Future _startListening() async {
     await speech.listen(
       onResult: _onSpeechResult,
-      listenFor: Duration(seconds: 10),
+      //listenFor: Duration(seconds: 10),
     );
     setState(() {
       _isListening = true;
@@ -335,6 +335,10 @@ class _ChatScreenState extends State<ChatScreen> {
     print("sample2");
     setState(() {
       String text = result.recognizedWords;
+      // Stop listening when the conversation ends
+      if (result.finalResult) {
+        _stopListening();
+      }
       print(text);
     });
   }
