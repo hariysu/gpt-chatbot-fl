@@ -35,6 +35,10 @@ class _ChatScreenState extends State<ChatScreen> {
 
   SpeechToText speech = SpeechToText();
   bool _isListening = false;
+  late String textOfSpeech = "";
+
+  late ModelsProvider modelsProvider;
+  late ChatProvider chatProvider;
 
   @override
   void initState() {
@@ -49,6 +53,12 @@ class _ChatScreenState extends State<ChatScreen> {
     super.initState();
   }
 
+  void _initializeControllers() {
+    _listScrollController = ScrollController();
+    textEditingController = TextEditingController();
+    focusNode = FocusNode();
+  }
+
   @override
   void dispose() {
     _listScrollController.dispose();
@@ -59,8 +69,8 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final modelsProvider = Provider.of<ModelsProvider>(context);
-    final chatProvider = Provider.of<ChatProvider>(context);
+    modelsProvider = Provider.of<ModelsProvider>(context);
+    chatProvider = Provider.of<ChatProvider>(context);
     return Scaffold(
       appBar: AppBar(
         elevation: 20,
@@ -258,7 +268,7 @@ class _ChatScreenState extends State<ChatScreen> {
       );
       return;
     }
-    if (textEditingController.text.isEmpty) {
+    if (textEditingController.text.isEmpty && textOfSpeech == "") {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: TextWidget(
@@ -270,7 +280,9 @@ class _ChatScreenState extends State<ChatScreen> {
       return;
     }
     try {
-      String msg = textEditingController.text;
+      String msg = textEditingController.text == ""
+          ? textOfSpeech
+          : textEditingController.text;
       setState(() {
         _isTyping = true;
         // chatList.add(ChatModel(msg: textEditingController.text, chatIndex: 0));
@@ -321,7 +333,6 @@ class _ChatScreenState extends State<ChatScreen> {
     setState(() {
       _isListening = true;
     });
-    print("sample0");
   }
 
   void _stopListening() async {
@@ -329,18 +340,18 @@ class _ChatScreenState extends State<ChatScreen> {
     setState(() {
       _isListening = false;
     });
-    print("sample1");
+    await sendMessageFCT(
+        modelsProvider: modelsProvider, chatProvider: chatProvider);
   }
 
   void _onSpeechResult(SpeechRecognitionResult result) {
-    print("sample2");
     setState(() {
-      String text = result.recognizedWords;
+      textOfSpeech = result.recognizedWords;
       // Stop listening when the conversation ends
       if (result.finalResult) {
         _stopListening();
       }
-      print(text);
+      print(textOfSpeech);
     });
   }
 }
