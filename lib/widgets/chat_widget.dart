@@ -1,6 +1,5 @@
 import 'dart:convert';
 
-import 'package:animated_text_kit/animated_text_kit.dart';
 import 'package:bubble/bubble.dart';
 import 'package:flutter/material.dart';
 import 'package:gpt_chatbot/constants/const.dart';
@@ -62,17 +61,10 @@ class ChatWidget extends StatelessWidget {
                           showNip: true,
                           nip: BubbleNip.leftBottom,
                           radius: const Radius.circular(10.0),
-                          child: AnimatedTextKit(
-                              pause: const Duration(milliseconds: 0),
-                              isRepeatingAnimation: false,
-                              repeatForever: false,
-                              displayFullTextOnTap: true,
-                              totalRepeatCount: 0,
-                              animatedTexts: [
-                                TyperAnimatedText(msg,
-                                    speed: const Duration(milliseconds: 8),
-                                    textStyle: const TextStyle(fontSize: 16)),
-                              ]),
+                          child: Text(
+                            msg,
+                            style: const TextStyle(fontSize: 16),
+                          ),
                         )
                       : Bubble(
                           alignment: Alignment.topLeft,
