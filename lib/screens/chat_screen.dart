@@ -3,6 +3,7 @@ import 'dart:developer';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_tts/flutter_tts.dart';
 import 'package:gpt_chatbot/constants/const.dart';
 import 'package:gpt_chatbot/providers/chat_provider.dart';
 import 'package:gpt_chatbot/services/services.dart';
@@ -34,11 +35,14 @@ class _ChatScreenState extends State<ChatScreen> {
   String? base64Image;
 
   SpeechToText speech = SpeechToText();
+
   bool _isListening = false;
   late String textOfSpeech = "";
 
   late ModelsProvider modelsProvider;
   late ChatProvider chatProvider;
+
+  final FlutterTts flutterTts = FlutterTts();
 
   @override
   void initState() {
@@ -94,20 +98,22 @@ class _ChatScreenState extends State<ChatScreen> {
           children: [
             Flexible(
               child: ListView.builder(
-                  padding: const EdgeInsets.only(bottom: 10),
-                  controller: _listScrollController,
-                  itemCount: chatProvider.getChatList.length, //chatList.length,
-                  itemBuilder: (context, index) {
-                    return ChatWidget(
-                      msg: chatProvider
-                          .getChatList[index].msg, // chatList[index].msg,
-                      chatIndex: chatProvider.getChatList[index]
-                          .chatIndex, //chatList[index].chatIndex,
-                      shouldAnimate:
-                          chatProvider.getChatList.length - 1 == index,
-                      image: chatProvider.getChatList[index].base64Image,
-                    );
-                  }),
+                padding: const EdgeInsets.only(bottom: 10),
+                controller: _listScrollController,
+                itemCount: chatProvider.getChatList.length, //chatList.length,
+                itemBuilder: (context, index) {
+                  /*if (chatProvider.getChatList.last.chatIndex == 1)
+                    _beginSpeak(chatProvider.getChatList.last.msg);*/
+                  return ChatWidget(
+                    msg: chatProvider
+                        .getChatList[index].msg, // chatList[index].msg,
+                    chatIndex: chatProvider.getChatList[index]
+                        .chatIndex, //chatList[index].chatIndex,
+                    shouldAnimate: chatProvider.getChatList.length - 1 == index,
+                    image: chatProvider.getChatList[index].base64Image,
+                  );
+                },
+              ),
             ),
             if (_isTyping) ...[
               LoadingAnimationWidget.waveDots(color: Colors.white, size: 30)
@@ -277,6 +283,7 @@ class _ChatScreenState extends State<ChatScreen> {
           msg: msg,
           chosenModelId: modelsProvider.getCurrentModel,
           base64Image: base64Image ?? "");
+      _beginSpeaking(chatProvider.getChatList.last.msg);
     } catch (error) {
       log("error $error");
       _showErrorSnackBar(error.toString());
@@ -343,5 +350,12 @@ class _ChatScreenState extends State<ChatScreen> {
       }
       print(textOfSpeech);
     });
+  }
+
+  Future _beginSpeaking(String text) async {
+    await flutterTts.setLanguage("tr-TR");
+    await flutterTts.setPitch(1.0);
+    await flutterTts.setSpeechRate(1.0);
+    await flutterTts.speak(text);
   }
 }
