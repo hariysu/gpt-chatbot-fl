@@ -47,7 +47,7 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   void initState() {
     _initializeControllers();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
+    /*WidgetsBinding.instance.addPostFrameCallback((_) => */ _scrollToBottom() /*)*/;
     _initSpeech();
     super.initState();
   }
@@ -248,10 +248,12 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   void _scrollToBottom() {
-    _listScrollController.animateTo(
-        _listScrollController.position.maxScrollExtent,
-        duration: const Duration(seconds: 1),
-        curve: Curves.easeOut);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _listScrollController.animateTo(
+          _listScrollController.position.maxScrollExtent,
+          duration: const Duration(seconds: 1),
+          curve: Curves.easeOut);
+    });
   }
 
   Future<void> _handleMessageSubmission() async {
