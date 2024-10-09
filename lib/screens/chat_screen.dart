@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:developer';
 import 'dart:io';
 
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:gpt_chatbot/constants/const.dart';
@@ -43,6 +44,8 @@ class _ChatScreenState extends State<ChatScreen> {
   late ChatProvider chatProvider;
 
   final FlutterTts flutterTts = FlutterTts();
+
+  String? documentContent;
 
   @override
   void initState() {
@@ -145,6 +148,7 @@ class _ChatScreenState extends State<ChatScreen> {
                           ),
                         ),
                       ),
+                      _buildDocumentUploadButton(),
                       _buildMicButton(),
                       _buildImagePickerButton(),
                       _buildSendButton(),
@@ -197,14 +201,6 @@ class _ChatScreenState extends State<ChatScreen> {
     });
   }
 
-  Widget _buildMicButton() {
-    return IconButton(
-      onPressed: _isListening ? _stopListening : _startListening,
-      icon:
-          Icon(_isListening ? Icons.mic : Icons.mic_none, color: Colors.white),
-    );
-  }
-
   Widget _buildImagePickerButton() {
     return IconButton(
       onPressed: _pickImageFromGallery,
@@ -213,6 +209,37 @@ class _ChatScreenState extends State<ChatScreen> {
         color: Colors.white,
       ),
     );
+  }
+
+  Widget _buildMicButton() {
+    return IconButton(
+      onPressed: _isListening ? _stopListening : _startListening,
+      icon:
+          Icon(_isListening ? Icons.mic : Icons.mic_none, color: Colors.white),
+    );
+  }
+
+  Widget _buildDocumentUploadButton() {
+    return IconButton(
+      onPressed: _pickFileFromDevice,
+      icon: const Icon(
+        Icons.folder,
+        color: Colors.white,
+      ),
+    );
+  }
+
+  void _pickFileFromDevice() async {
+    FilePickerResult? result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['pdf', 'doc', 'docx'],
+    );
+    if (result != null) {
+      File file = File(result.files.single.path!);
+      documentContent = await file.readAsString();
+    } else {
+      print('No file selected.');
+    }
   }
 
   void _pickImageFromGallery() async {
