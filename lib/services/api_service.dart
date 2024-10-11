@@ -84,10 +84,11 @@ class ApiService {
   }
 
   // Send Message with images
-  static Future<List<ChatModel>> sendMessageWithImages(
+  static Future<List<ChatModel>> sendMessageWithImagesOrDocuments(
       {required String message,
       required String modelId,
-      required String base64Image}) async {
+      required String base64Image,
+      required String base64Document}) async {
     try {
       log("modelId $modelId");
       var response = await http.post(
@@ -107,10 +108,19 @@ class ApiService {
                     "type": "text",
                     "text": message,
                   },
-                  {
-                    "type": "image_url",
-                    "image_url": {"url": "data:image/jpeg;base64,$base64Image"}
-                  }
+                  // Use base64Image if it is not empty, otherwise use base64Document
+                  if (base64Image.isNotEmpty)
+                    {
+                      "type": "image_url",
+                      "image_url": {
+                        "url": "data:image/jpeg;base64,$base64Image"
+                      }
+                    }
+                  else
+                    {
+                      "type": "text",
+                      "text": "data:text/plain;base64,$base64Document",
+                    }
                 ],
               }
             ]

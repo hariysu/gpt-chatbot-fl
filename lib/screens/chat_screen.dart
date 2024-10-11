@@ -45,7 +45,8 @@ class _ChatScreenState extends State<ChatScreen> {
 
   final FlutterTts flutterTts = FlutterTts();
 
-  String? documentContent;
+  List<int>? _documentContent;
+  String? _base64DocumentContent;
 
   @override
   void initState() {
@@ -133,6 +134,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   child: Row(
                     children: [
                       _buildImagePreview(),
+                      _buildDocumentPreview(),
                       Expanded(
                         flex: 4,
                         child: Padding(
@@ -201,6 +203,42 @@ class _ChatScreenState extends State<ChatScreen> {
     });
   }
 
+  Widget _buildDocumentPreview() {
+    return _documentContent != null
+        ? Expanded(
+            flex: 1,
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                const Icon(
+                  Icons.file_present,
+                  color: Colors.white,
+                  size: 40,
+                ),
+                Positioned(
+                  top: -20,
+                  right: -25,
+                  child: ElevatedButton(
+                    onPressed: _clearDocument,
+                    style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                        shape: const CircleBorder(),
+                        minimumSize: const Size(20, 20)),
+                    child: const Icon(Icons.close, color: Colors.white),
+                  ),
+                ),
+              ],
+            ),
+          )
+        : Container();
+  }
+
+  void _clearDocument() {
+    setState(() {
+      _documentContent = null;
+    });
+  }
+
   Widget _buildImagePickerButton() {
     return IconButton(
       onPressed: _pickImageFromGallery,
@@ -236,7 +274,11 @@ class _ChatScreenState extends State<ChatScreen> {
     );
     if (result != null) {
       File file = File(result.files.single.path!);
-      List<int> documentContent = await file.readAsBytes();
+      //Read file as bytes
+      _documentContent = await file.readAsBytes();
+      // Convert bytes into Base64
+      _base64DocumentContent = base64Encode(_documentContent!);
+      setState(() {});
     } else {
       print('No file selected.');
     }
@@ -265,6 +307,7 @@ class _ChatScreenState extends State<ChatScreen> {
         setState(() {
           base64Image = null;
           //_imageFile = null;
+          _documentContent = null;
         });
       },
       icon: const Icon(
@@ -288,6 +331,7 @@ class _ChatScreenState extends State<ChatScreen> {
         modelsProvider: modelsProvider, chatProvider: chatProvider);
     setState(() {
       base64Image = null;
+      _documentContent = null;
     });
   }
 
@@ -311,9 +355,11 @@ class _ChatScreenState extends State<ChatScreen> {
       await chatProvider.sendMessageAndGetAnswers(
           msg: msg,
           chosenModelId: modelsProvider.getCurrentModel,
-          base64Image: base64Image ?? "");
+          base64Image: base64Image ?? "",
+          base64document: _base64DocumentContent ?? "");
       _beginSpeaking(chatProvider.getChatList.last.msg);
     } catch (error) {
+      // for API Errors
       log("error $error");
       _showErrorSnackBar(error.toString());
     } finally {
@@ -329,7 +375,10 @@ class _ChatScreenState extends State<ChatScreen> {
     return setState(() {
       _isTyping = true;
       // chatList.add(ChatModel(msg: textEditingController.text, chatIndex: 0));
-      chatProvider.addUserMessage(msg: msg, base64Image: base64Image);
+      chatProvider.addUserMessage(
+          msg: msg,
+          base64Image: base64Image,
+          base64document: _base64DocumentContent);
       textEditingController.clear();
       focusNode.unfocus();
       _imageFile = null;
