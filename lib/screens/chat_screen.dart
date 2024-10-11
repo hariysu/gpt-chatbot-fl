@@ -232,11 +232,11 @@ class _ChatScreenState extends State<ChatScreen> {
   void _pickFileFromDevice() async {
     FilePickerResult? result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
-      allowedExtensions: ['pdf', 'doc', 'docx'],
+      allowedExtensions: ['pdf', 'doc', 'docx', 'txt'],
     );
     if (result != null) {
       File file = File(result.files.single.path!);
-      documentContent = await file.readAsString();
+      List<int> documentContent = await file.readAsBytes();
     } else {
       print('No file selected.');
     }
