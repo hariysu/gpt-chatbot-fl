@@ -45,8 +45,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
   final FlutterTts flutterTts = FlutterTts();
 
-  List<int>? _documentContent;
-  String? _base64DocumentContent;
+  String? _documentText;
 
   @override
   void initState() {
@@ -204,7 +203,7 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Widget _buildDocumentPreview() {
-    return _documentContent != null
+    return _documentText != null
         ? Expanded(
             flex: 1,
             child: Stack(
@@ -235,7 +234,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
   void _clearDocument() {
     setState(() {
-      _documentContent = null;
+      _documentText = null;
     });
   }
 
@@ -274,10 +273,8 @@ class _ChatScreenState extends State<ChatScreen> {
     );
     if (result != null) {
       File file = File(result.files.single.path!);
-      //Read file as bytes
-      _documentContent = await file.readAsBytes();
-      // Convert bytes into Base64
-      _base64DocumentContent = base64Encode(_documentContent!);
+      // Extract text from 'txt'
+      _documentText = await file.readAsString();
       setState(() {});
     } else {
       print('No file selected.');
@@ -307,7 +304,7 @@ class _ChatScreenState extends State<ChatScreen> {
         setState(() {
           base64Image = null;
           //_imageFile = null;
-          _documentContent = null;
+          _documentText = null;
         });
       },
       icon: const Icon(
@@ -331,7 +328,7 @@ class _ChatScreenState extends State<ChatScreen> {
         modelsProvider: modelsProvider, chatProvider: chatProvider);
     setState(() {
       base64Image = null;
-      _documentContent = null;
+      _documentText = null;
     });
   }
 
@@ -356,7 +353,7 @@ class _ChatScreenState extends State<ChatScreen> {
           msg: msg,
           chosenModelId: modelsProvider.getCurrentModel,
           base64Image: base64Image ?? "",
-          base64document: _base64DocumentContent ?? "");
+          documentText: _documentText ?? "");
       _beginSpeaking(chatProvider.getChatList.last.msg);
     } catch (error) {
       // for API Errors
@@ -376,9 +373,7 @@ class _ChatScreenState extends State<ChatScreen> {
       _isTyping = true;
       // chatList.add(ChatModel(msg: textEditingController.text, chatIndex: 0));
       chatProvider.addUserMessage(
-          msg: msg,
-          base64Image: base64Image,
-          base64document: _base64DocumentContent);
+          msg: msg, base64Image: base64Image, documentText: _documentText);
       textEditingController.clear();
       focusNode.unfocus();
       _imageFile = null;

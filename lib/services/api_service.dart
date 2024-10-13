@@ -88,7 +88,7 @@ class ApiService {
       {required String message,
       required String modelId,
       required String base64Image,
-      required String base64Document}) async {
+      required String documentContent}) async {
     try {
       log("modelId $modelId");
       var response = await http.post(
@@ -106,20 +106,17 @@ class ApiService {
                 "content": [
                   {
                     "type": "text",
-                    "text": message,
+                    "text": documentContent.isEmpty
+                        ? message
+                        : message + '\n' + documentContent,
                   },
-                  // Use base64Image if it is not empty, otherwise use base64Document
+                  // Use base64Image if it is not empty
                   if (base64Image.isNotEmpty)
                     {
                       "type": "image_url",
                       "image_url": {
                         "url": "data:image/jpeg;base64,$base64Image"
                       }
-                    }
-                  else
-                    {
-                      "type": "text",
-                      "text": "data:text/plain;base64,$base64Document",
                     }
                 ],
               }

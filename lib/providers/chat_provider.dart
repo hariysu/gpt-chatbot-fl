@@ -13,12 +13,12 @@ class ChatProvider with ChangeNotifier {
 
   // Adds user messages to the chatList
   void addUserMessage(
-      {required String msg, String? base64Image, String? base64document}) {
+      {required String msg, String? base64Image, String? documentText}) {
     chatList.add(ChatModel(
         msg: msg,
         chatIndex: 0,
         base64Image: base64Image ?? "",
-        base64document: base64document ?? ""));
+        documentText: documentText ?? ""));
     notifyListeners();
   }
 
@@ -27,18 +27,18 @@ class ChatProvider with ChangeNotifier {
       {required String msg,
       required String chosenModelId,
       required String base64Image,
-      required String base64document}) async {
+      required String documentText}) async {
     // Only for messages with images or documents except dall-e
     if ((chosenModelId.toLowerCase().startsWith("gpt-4") &&
             base64Image != "") ||
         (chosenModelId.toLowerCase().startsWith("gpt-4") &&
-            base64document != "")) {
+            documentText != "")) {
       List<ChatModel> chatListWithImages =
           await ApiService.sendMessageWithImagesOrDocuments(
         message: msg,
         modelId: chosenModelId,
         base64Image: base64Image,
-        base64Document: base64document,
+        documentContent: documentText,
       );
       chatList.addAll(chatListWithImages);
     } else if (chosenModelId.toLowerCase().startsWith("gpt")) {
