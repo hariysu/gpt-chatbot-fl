@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:developer';
 import 'dart:io';
 
+import 'package:docx_to_text/docx_to_text.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
@@ -286,6 +287,10 @@ class _ChatScreenState extends State<ChatScreen> {
         /* log(_documentText!); */
         //Dispose the document.
         document.dispose();
+      } else if (fileExtension == "doc" || fileExtension == "docx") {
+        final bytes = await file.readAsBytes();
+        _documentText = docxToText(bytes);
+        log(_documentText!);
       }
 
       setState(() {});
