@@ -273,30 +273,45 @@ class _ChatScreenState extends State<ChatScreen> {
       type: FileType.custom,
       allowedExtensions: ['pdf', 'doc', 'docx', 'txt'],
     );
+
     if (result != null) {
       File file = File(result.files.single.path!);
       String? fileExtension = result.files.single.extension;
-      // Extract text from 'txt'
-      if (fileExtension == "txt") {
-        _documentText = await file.readAsString();
-      } else if (fileExtension == "pdf") {
-        PdfDocument document = PdfDocument(inputBytes: file.readAsBytesSync());
-        //Extract the text from page 1.
-        _documentText =
-            PdfTextExtractor(document).extractText(startPageIndex: 0);
-        /* log(_documentText!); */
-        //Dispose the document.
-        document.dispose();
-      } else if (fileExtension == "doc" || fileExtension == "docx") {
-        final bytes = await file.readAsBytes();
-        _documentText = docxToText(bytes);
-        log(_documentText!);
-      }
+
+      // Text extraction operations
+      _documentText = await _extractTextFromFile(file, fileExtension);
 
       setState(() {});
     } else {
-      print('No file selected.');
+      log('No file selected.');
     }
+  }
+
+// Text extraction function regarding file type
+  Future<String?> _extractTextFromFile(File file, String? fileExtension) async {
+    if (fileExtension == "txt") {
+      return await file.readAsString();
+    } else if (fileExtension == "pdf") {
+      return await _extractTextFromPdf(file);
+    } else if (fileExtension == "doc" || fileExtension == "docx") {
+      return await _extractTextFromDocx(file);
+    }
+    return null;
+  }
+
+// Text extraction function for PDF
+  Future<String?> _extractTextFromPdf(File file) async {
+    final bytes = await file.readAsBytes();
+    PdfDocument document = PdfDocument(inputBytes: bytes);
+    String text = PdfTextExtractor(document).extractText(startPageIndex: 0);
+    document.dispose();
+    return text;
+  }
+
+// Text extraction function for DOC and DOCX
+  Future<String?> _extractTextFromDocx(File file) async {
+    final bytes = await file.readAsBytes();
+    return docxToText(bytes);
   }
 
   void _pickImageFromGallery() async {
