@@ -14,6 +14,7 @@ import 'package:loading_animation_widget/loading_animation_widget.dart';
 import 'package:provider/provider.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
 import 'package:speech_to_text/speech_to_text.dart';
+import 'package:syncfusion_flutter_pdf/pdf.dart';
 
 import '../providers/models_provider.dart';
 import '../widgets/text_widget.dart';
@@ -273,8 +274,20 @@ class _ChatScreenState extends State<ChatScreen> {
     );
     if (result != null) {
       File file = File(result.files.single.path!);
+      String? fileExtension = result.files.single.extension;
       // Extract text from 'txt'
-      _documentText = await file.readAsString();
+      if (fileExtension == "txt") {
+        _documentText = await file.readAsString();
+      } else if (fileExtension == "pdf") {
+        PdfDocument document = PdfDocument(inputBytes: file.readAsBytesSync());
+        //Extract the text from page 1.
+        _documentText =
+            PdfTextExtractor(document).extractText(startPageIndex: 0);
+        /* log(_documentText!); */
+        //Dispose the document.
+        document.dispose();
+      }
+
       setState(() {});
     } else {
       print('No file selected.');
