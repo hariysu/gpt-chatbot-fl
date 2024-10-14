@@ -6,19 +6,27 @@ import '../models/chat_model.dart';
 import '../services/api_service.dart';
 
 class ChatProvider with ChangeNotifier {
-  List<ChatModel> chatList = [];
+  /* List<ChatModel> chatList = [];
   List<ChatModel> get getChatList {
     return chatList;
+  } */
+
+  List<Map<String, dynamic>> messages = [
+    {"role": "system", "content": "You are a helpful assistant."}
+  ];
+  List<Map<String, dynamic>> get getMessages {
+    return messages;
   }
 
   // Adds user messages to the chatList
   void addUserMessage(
       {required String content, String? base64Image, String? documentText}) {
-    chatList.add(ChatModel(
-        content: content,
-        role: "user",
-        base64Image: base64Image ?? "",
-        documentText: documentText ?? ""));
+    messages.add(ChatModel(
+            content: content,
+            role: "user",
+            base64Image: base64Image ?? "",
+            documentText: documentText ?? "")
+        .toJson());
     notifyListeners();
   }
 
@@ -40,15 +48,16 @@ class ChatProvider with ChangeNotifier {
         base64Image: base64Image,
         documentContent: documentText,
       );
-      chatList.addAll(chatListWithImages);
+      //chatList.addAll(chatListWithImages);
     } else if (chosenModelId.toLowerCase().startsWith("gpt")) {
-      List<ChatModel> chatListLive = await ApiService.sendMessageGPT(
-          content: content, modelId: chosenModelId);
-      chatList.addAll(chatListLive);
+      List<Map<String, dynamic>> chatListLive = await ApiService.sendMessageGPT(
+          messages: messages, modelId: chosenModelId);
+      messages.addAll(chatListLive);
     } else {
-      List<ChatModel> chatListLegacy = await ApiService.sendMessage(
-          content: content, modelId: chosenModelId);
-      chatList.addAll(chatListLegacy);
+      List<Map<String, dynamic>> chatListLegacy = await ApiService.sendMessage(
+          messages: messages, modelId: chosenModelId);
+      print(chatListLegacy);
+      messages.addAll(chatListLegacy);
     }
     notifyListeners();
   }

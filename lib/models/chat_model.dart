@@ -1,6 +1,6 @@
 class ChatModel {
   final String content;
-  final String role; /* chatIndex 0 = user  1 = api/assistant */
+  final String role;
   final String? base64Image;
   final String? documentText;
 
@@ -16,4 +16,12 @@ class ChatModel {
       role: json["role"],
       base64Image: json["base64Image"] ?? "",
       documentText: json["documentText"] ?? "");
+
+  // Function to convert Json format
+  Map<String, dynamic> toJson() {
+    return {
+      "role": role,
+      "content": content,
+    };
+  }
 }

@@ -105,17 +105,17 @@ class _ChatScreenState extends State<ChatScreen> {
               child: ListView.builder(
                 padding: const EdgeInsets.only(bottom: 10),
                 controller: _listScrollController,
-                itemCount: chatProvider.getChatList.length, //chatList.length,
+                itemCount: chatProvider.getMessages.length, //chatList.length,
                 itemBuilder: (context, index) {
                   /*if (chatProvider.getChatList.last.role == assistant)
                     _beginSpeak(chatProvider.getChatList.last.content);*/
                   return ChatWidget(
-                    content: chatProvider
-                        .getChatList[index].content, // chatList[index].content,
-                    role: chatProvider
-                        .getChatList[index].role, //chatList[index].role,
-                    shouldAnimate: chatProvider.getChatList.length - 1 == index,
-                    image: chatProvider.getChatList[index].base64Image,
+                    content: chatProvider.getMessages[index]
+                        ['content'], // chatList[index].content,
+                    role: chatProvider.getMessages[index]
+                        ['role'], //chatList[index].role,
+                    shouldAnimate: chatProvider.getMessages.length - 1 == index,
+                    //image: chatProvider.getMessages[index].base64Image,
                   );
                 },
               ),
@@ -387,7 +387,7 @@ class _ChatScreenState extends State<ChatScreen> {
           chosenModelId: modelsProvider.getCurrentModel,
           base64Image: base64Image ?? "",
           documentText: _documentText ?? "");
-      _beginSpeaking(chatProvider.getChatList.last.content);
+      _beginSpeaking(chatProvider.getMessages.last['content']);
     } catch (error) {
       // for API Errors
       log("error $error");

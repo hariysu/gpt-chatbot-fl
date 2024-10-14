@@ -37,8 +37,9 @@ class ApiService {
   }
 
   // Send Message using ChatGPT API live models
-  static Future<List<ChatModel>> sendMessageGPT(
-      {required String content, required String modelId}) async {
+  static Future<List<Map<String, dynamic>>> sendMessageGPT(
+      {required List<Map<String, dynamic>> messages,
+      required String modelId}) async {
     try {
       log("modelId $modelId");
       var response = await http.post(
@@ -50,12 +51,7 @@ class ApiService {
         body: jsonEncode(
           {
             "model": modelId,
-            "messages": [
-              {
-                "role": "user",
-                "content": content,
-              }
-            ]
+            "messages": messages,
           },
         ),
       );
@@ -65,18 +61,19 @@ class ApiService {
         // print("jsonResponse['error'] ${jsonResponse['error']["message"]}");
         throw HttpException(jsonResponse['error']["message"]);
       }
-      List<ChatModel> chatList = [];
+      //List<ChatModel> chatList = [];
+      List<Map<String, dynamic>> messagesList = [];
       if (jsonResponse["choices"].length > 0) {
         // log("jsonResponse[choices]text ${jsonResponse["choices"][0]["text"]}");
-        chatList = List.generate(
+        messagesList = List.generate(
           jsonResponse["choices"].length,
           (index) => ChatModel(
             content: jsonResponse["choices"][index]["message"]["content"],
             role: "assistant",
-          ),
+          ).toJson(),
         );
       }
-      return chatList;
+      return messagesList;
     } catch (error) {
       log("error $error");
       rethrow;
@@ -149,8 +146,9 @@ class ApiService {
 
   // Send Message using ChatGPT API legacy models (/v1/completions (Legacy))
   // gpt-3.5-turbo-instruct,  babbage-002,  davinci-002
-  static Future<List<ChatModel>> sendMessage(
-      {required String content, required String modelId}) async {
+  static Future<List<Map<String, dynamic>>> sendMessage(
+      {required List<Map<String, dynamic>> messages,
+      required String modelId}) async {
     try {
       log("modelId $modelId");
       var response = await http.post(
@@ -162,8 +160,8 @@ class ApiService {
         body: jsonEncode(
           {
             "model": modelId,
-            "prompt": content,
-            "max_tokens": 300,
+            "prompt": messages.last['content'],
+            "max_tokens": 100,
           },
         ),
       );
@@ -175,18 +173,19 @@ class ApiService {
         // print("jsonResponse['error'] ${jsonResponse['error']["message"]}");
         throw HttpException(jsonResponse['error']["message"]);
       }
-      List<ChatModel> chatList = [];
+
+      List<Map<String, dynamic>> messagesList = [];
       if (jsonResponse["choices"].length > 0) {
         // log("jsonResponse[choices]text ${jsonResponse["choices"][0]["text"]}");
-        chatList = List.generate(
+        messagesList = List.generate(
           jsonResponse["choices"].length,
           (index) => ChatModel(
             content: jsonResponse["choices"][index]["text"],
             role: "assistant",
-          ),
+          ).toJson(),
         );
       }
-      return chatList;
+      return messagesList;
     } catch (error) {
       log("error $error");
       rethrow;
