@@ -107,13 +107,13 @@ class _ChatScreenState extends State<ChatScreen> {
                 controller: _listScrollController,
                 itemCount: chatProvider.getChatList.length, //chatList.length,
                 itemBuilder: (context, index) {
-                  /*if (chatProvider.getChatList.last.chatIndex == 1)
+                  /*if (chatProvider.getChatList.last.role == assistant)
                     _beginSpeak(chatProvider.getChatList.last.content);*/
                   return ChatWidget(
                     content: chatProvider
                         .getChatList[index].content, // chatList[index].content,
-                    chatIndex: chatProvider.getChatList[index]
-                        .chatIndex, //chatList[index].chatIndex,
+                    role: chatProvider
+                        .getChatList[index].role, //chatList[index].role,
                     shouldAnimate: chatProvider.getChatList.length - 1 == index,
                     image: chatProvider.getChatList[index].base64Image,
                   );
@@ -404,7 +404,7 @@ class _ChatScreenState extends State<ChatScreen> {
   void _prepareForNewMessage(String content) {
     return setState(() {
       _isTyping = true;
-      // chatList.add(ChatModel(content: textEditingController.text, chatIndex: 0));
+      // chatList.add(ChatModel(content: textEditingController.text, role: "user"));
       chatProvider.addUserMessage(
           content: content,
           base64Image: base64Image,

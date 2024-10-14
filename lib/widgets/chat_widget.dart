@@ -8,12 +8,12 @@ class ChatWidget extends StatelessWidget {
   const ChatWidget(
       {super.key,
       required this.content,
-      required this.chatIndex,
+      required this.role,
       this.shouldAnimate = false,
       this.image = ""});
 
   final String content;
-  final int chatIndex;
+  final String role;
   final bool shouldAnimate;
   final String? image;
 
@@ -30,7 +30,7 @@ class ChatWidget extends StatelessWidget {
             child: Container(
               decoration:
                   BoxDecoration(borderRadius: BorderRadius.circular(20)),
-              child: chatIndex == 0 // index 0 = user, 1 = gpt
+              child: role == "user"
                   ? Bubble(
                       alignment: Alignment.topRight,
                       color: Colors.greenAccent.shade100,

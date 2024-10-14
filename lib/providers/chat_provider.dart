@@ -16,7 +16,7 @@ class ChatProvider with ChangeNotifier {
       {required String content, String? base64Image, String? documentText}) {
     chatList.add(ChatModel(
         content: content,
-        chatIndex: 0,
+        role: "user",
         base64Image: base64Image ?? "",
         documentText: documentText ?? ""));
     notifyListeners();

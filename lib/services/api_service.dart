@@ -72,7 +72,7 @@ class ApiService {
           jsonResponse["choices"].length,
           (index) => ChatModel(
             content: jsonResponse["choices"][index]["message"]["content"],
-            chatIndex: 1,
+            role: "assistant",
           ),
         );
       }
@@ -136,7 +136,7 @@ class ApiService {
           jsonResponse["choices"].length,
           (index) => ChatModel(
             content: jsonResponse["choices"][index]["message"]["content"],
-            chatIndex: 1,
+            role: "assistant",
           ),
         );
       }
@@ -182,7 +182,7 @@ class ApiService {
           jsonResponse["choices"].length,
           (index) => ChatModel(
             content: jsonResponse["choices"][index]["text"],
-            chatIndex: 1,
+            role: "assistant",
           ),
         );
       }
