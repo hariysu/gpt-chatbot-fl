@@ -38,7 +38,7 @@ class ApiService {
 
   // Send Message using ChatGPT API live models
   static Future<List<ChatModel>> sendMessageGPT(
-      {required String message, required String modelId}) async {
+      {required String content, required String modelId}) async {
     try {
       log("modelId $modelId");
       var response = await http.post(
@@ -53,7 +53,7 @@ class ApiService {
             "messages": [
               {
                 "role": "user",
-                "content": message,
+                "content": content,
               }
             ]
           },
@@ -71,7 +71,7 @@ class ApiService {
         chatList = List.generate(
           jsonResponse["choices"].length,
           (index) => ChatModel(
-            msg: jsonResponse["choices"][index]["message"]["content"],
+            content: jsonResponse["choices"][index]["message"]["content"],
             chatIndex: 1,
           ),
         );
@@ -85,7 +85,7 @@ class ApiService {
 
   // Send Message with images
   static Future<List<ChatModel>> sendMessageWithImagesOrDocuments(
-      {required String message,
+      {required String content,
       required String modelId,
       required String base64Image,
       required String documentContent}) async {
@@ -107,8 +107,8 @@ class ApiService {
                   {
                     "type": "text",
                     "text": documentContent.isEmpty
-                        ? message
-                        : message + '\n' + documentContent,
+                        ? content
+                        : content + '\n' + documentContent,
                   },
                   // Use base64Image if it is not empty
                   if (base64Image.isNotEmpty)
@@ -135,7 +135,7 @@ class ApiService {
         chatList = List.generate(
           jsonResponse["choices"].length,
           (index) => ChatModel(
-            msg: jsonResponse["choices"][index]["message"]["content"],
+            content: jsonResponse["choices"][index]["message"]["content"],
             chatIndex: 1,
           ),
         );
@@ -150,7 +150,7 @@ class ApiService {
   // Send Message using ChatGPT API legacy models (/v1/completions (Legacy))
   // gpt-3.5-turbo-instruct,  babbage-002,  davinci-002
   static Future<List<ChatModel>> sendMessage(
-      {required String message, required String modelId}) async {
+      {required String content, required String modelId}) async {
     try {
       log("modelId $modelId");
       var response = await http.post(
@@ -162,7 +162,7 @@ class ApiService {
         body: jsonEncode(
           {
             "model": modelId,
-            "prompt": message,
+            "prompt": content,
             "max_tokens": 300,
           },
         ),
@@ -181,7 +181,7 @@ class ApiService {
         chatList = List.generate(
           jsonResponse["choices"].length,
           (index) => ChatModel(
-            msg: jsonResponse["choices"][index]["text"],
+            content: jsonResponse["choices"][index]["text"],
             chatIndex: 1,
           ),
         );

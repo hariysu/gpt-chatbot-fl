@@ -13,9 +13,9 @@ class ChatProvider with ChangeNotifier {
 
   // Adds user messages to the chatList
   void addUserMessage(
-      {required String msg, String? base64Image, String? documentText}) {
+      {required String content, String? base64Image, String? documentText}) {
     chatList.add(ChatModel(
-        msg: msg,
+        content: content,
         chatIndex: 0,
         base64Image: base64Image ?? "",
         documentText: documentText ?? ""));
@@ -24,7 +24,7 @@ class ChatProvider with ChangeNotifier {
 
   // Adds GPT responses to the chatList
   Future<void> sendMessageAndGetAnswers(
-      {required String msg,
+      {required String content,
       required String chosenModelId,
       required String base64Image,
       required String documentText}) async {
@@ -35,19 +35,19 @@ class ChatProvider with ChangeNotifier {
             documentText != "")) {
       List<ChatModel> chatListWithImages =
           await ApiService.sendMessageWithImagesOrDocuments(
-        message: msg,
+        content: content,
         modelId: chosenModelId,
         base64Image: base64Image,
         documentContent: documentText,
       );
       chatList.addAll(chatListWithImages);
     } else if (chosenModelId.toLowerCase().startsWith("gpt")) {
-      List<ChatModel> chatListLive =
-          await ApiService.sendMessageGPT(message: msg, modelId: chosenModelId);
+      List<ChatModel> chatListLive = await ApiService.sendMessageGPT(
+          content: content, modelId: chosenModelId);
       chatList.addAll(chatListLive);
     } else {
-      List<ChatModel> chatListLegacy =
-          await ApiService.sendMessage(message: msg, modelId: chosenModelId);
+      List<ChatModel> chatListLegacy = await ApiService.sendMessage(
+          content: content, modelId: chosenModelId);
       chatList.addAll(chatListLegacy);
     }
     notifyListeners();

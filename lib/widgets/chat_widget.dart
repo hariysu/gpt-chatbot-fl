@@ -7,12 +7,12 @@ import 'package:gpt_chatbot/constants/const.dart';
 class ChatWidget extends StatelessWidget {
   const ChatWidget(
       {super.key,
-      required this.msg,
+      required this.content,
       required this.chatIndex,
       this.shouldAnimate = false,
       this.image = ""});
 
-  final String msg;
+  final String content;
   final int chatIndex;
   final bool shouldAnimate;
   final String? image;
@@ -48,7 +48,7 @@ class ChatWidget extends StatelessWidget {
                               height: 200,
                             ),
                           Text(
-                            msg,
+                            content,
                             style: const TextStyle(fontSize: 16),
                           ),
                         ],
@@ -62,7 +62,7 @@ class ChatWidget extends StatelessWidget {
                           nip: BubbleNip.leftBottom,
                           radius: const Radius.circular(10.0),
                           child: Text(
-                            msg,
+                            content,
                             style: const TextStyle(fontSize: 16),
                           ),
                         )
@@ -73,7 +73,7 @@ class ChatWidget extends StatelessWidget {
                           nip: BubbleNip.leftBottom,
                           radius: const Radius.circular(10.0),
                           child: Text(
-                            msg,
+                            content,
                             style: const TextStyle(fontSize: 16),
                           ),
                         ),

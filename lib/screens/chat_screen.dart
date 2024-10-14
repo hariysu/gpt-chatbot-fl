@@ -108,10 +108,10 @@ class _ChatScreenState extends State<ChatScreen> {
                 itemCount: chatProvider.getChatList.length, //chatList.length,
                 itemBuilder: (context, index) {
                   /*if (chatProvider.getChatList.last.chatIndex == 1)
-                    _beginSpeak(chatProvider.getChatList.last.msg);*/
+                    _beginSpeak(chatProvider.getChatList.last.content);*/
                   return ChatWidget(
-                    msg: chatProvider
-                        .getChatList[index].msg, // chatList[index].msg,
+                    content: chatProvider
+                        .getChatList[index].content, // chatList[index].content,
                     chatIndex: chatProvider.getChatList[index]
                         .chatIndex, //chatList[index].chatIndex,
                     shouldAnimate: chatProvider.getChatList.length - 1 == index,
@@ -378,16 +378,16 @@ class _ChatScreenState extends State<ChatScreen> {
     }
     try {
       // Use text of speech as a message when text input is empty
-      String msg = textEditingController.text.isEmpty
+      String content = textEditingController.text.isEmpty
           ? textOfSpeech
           : textEditingController.text;
-      _prepareForNewMessage(msg);
+      _prepareForNewMessage(content);
       await chatProvider.sendMessageAndGetAnswers(
-          msg: msg,
+          content: content,
           chosenModelId: modelsProvider.getCurrentModel,
           base64Image: base64Image ?? "",
           documentText: _documentText ?? "");
-      _beginSpeaking(chatProvider.getChatList.last.msg);
+      _beginSpeaking(chatProvider.getChatList.last.content);
     } catch (error) {
       // for API Errors
       log("error $error");
@@ -401,12 +401,14 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
-  void _prepareForNewMessage(String msg) {
+  void _prepareForNewMessage(String content) {
     return setState(() {
       _isTyping = true;
-      // chatList.add(ChatModel(msg: textEditingController.text, chatIndex: 0));
+      // chatList.add(ChatModel(content: textEditingController.text, chatIndex: 0));
       chatProvider.addUserMessage(
-          msg: msg, base64Image: base64Image, documentText: _documentText);
+          content: content,
+          base64Image: base64Image,
+          documentText: _documentText);
       textEditingController.clear();
       focusNode.unfocus();
       _imageFile = null;
