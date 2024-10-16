@@ -27,7 +27,8 @@ class ChatModel {
         "content": [
           {
             "type": "text",
-            "text": "$content § ${documentText!}",
+            // Use three space to be able split the content from documentText
+            "text": "$content   ${documentText!}",
           }
         ]
       else if (base64Image != "")

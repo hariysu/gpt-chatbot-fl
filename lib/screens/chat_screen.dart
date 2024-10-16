@@ -49,8 +49,6 @@ class _ChatScreenState extends State<ChatScreen> {
 
   String? _documentText;
 
-  List<String> items = ['Chat 1', 'Chat 2', 'Chat 3'];
-
   @override
   void initState() {
     _initializeControllers();
@@ -101,31 +99,7 @@ class _ChatScreenState extends State<ChatScreen> {
           ),
         ],
       ),
-      drawer: Drawer(
-          child: Padding(
-        padding: const EdgeInsets.only(top: 40),
-        child: ListView.builder(
-          padding: EdgeInsets.zero,
-          itemCount: items.length +
-              items.length -
-              1, // Her bir ListTile ve Divider için sayım
-          itemBuilder: (BuildContext context, int index) {
-            if (index.isEven) {
-              // ListTile oluşturuyoruz
-              int tileIndex = index ~/ 2;
-              return ListTile(
-                title: Text(items[tileIndex]),
-                onTap: () {
-                  Navigator.pop(context); // Drawer'ı kapatma işlemi
-                },
-              );
-            } else {
-              // Divider oluşturuyoruz
-              return const Divider();
-            }
-          },
-        ),
-      )),
+      drawer: _buildDrawer(context),
       body: SafeArea(
         child: Column(
           children: [
@@ -149,7 +123,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   // Check if it's a document text
                   else if (messageContent.last?['text'] != null) {
                     relatedContent =
-                        messageContent.first['text'].split('§').first;
+                        messageContent.first['text'].split('   ').first;
                   }
                   // Check if it's a base64 image
                   else if (messageContent.last?['image_url']?['url'] != null) {
@@ -157,6 +131,11 @@ class _ChatScreenState extends State<ChatScreen> {
                     relatedImage =
                         messageContent.last['image_url']['url'].split(',').last;
                   }
+                  // Check to skip the first message
+                  if (index == 0) {
+                    return const SizedBox.shrink();
+                  }
+                  // Show other messages in listview
                   return ChatWidget(
                     content: relatedContent, // chatList[index].content,
                     role: chatProvider.getMessages[index]
@@ -210,6 +189,48 @@ class _ChatScreenState extends State<ChatScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Drawer _buildDrawer(BuildContext context) {
+    return Drawer(
+      child: Padding(
+        padding: const EdgeInsets.only(top: 40),
+        child: ListView.builder(
+          padding: EdgeInsets.zero,
+          itemCount: 5 /* chatProvider.getMessages.length */,
+          itemBuilder: (BuildContext context, int index) {
+            String? messageContent = _getMessageContent(index);
+            String listTileContent =
+                _getTruncatedMessageContent(messageContent);
+            return _buildDrawerListTile(listTileContent, context);
+          },
+        ),
+      ),
+    );
+  }
+
+  String? _getMessageContent(int index) {
+    // Get the first message with content type String
+    return chatProvider.getMessages
+            .where((message) => message['content'] is String)
+            .elementAt(1)['content'] ??
+        ''; // Retrieve content from related index
+  }
+
+  String _getTruncatedMessageContent(String? messageContent) {
+    // Cut and show message content
+    return (messageContent?.length ?? 0) > 50
+        ? '${messageContent!.substring(0, 50)}...'
+        : messageContent ?? '';
+  }
+
+  ListTile _buildDrawerListTile(String listTileContent, BuildContext context) {
+    return ListTile(
+      title: Text(listTileContent),
+      onTap: () {
+        Navigator.pop(context);
+      },
     );
   }
 
