@@ -3,7 +3,7 @@ import 'package:gpt_chatbot/services/api_service.dart';
 import 'package:flutter/cupertino.dart';
 
 class ModelsProvider with ChangeNotifier {
-  String currentModel = "gpt-3.5-turbo-0125";
+  String currentModel = "gpt-4o-mini";
 
   String get getCurrentModel {
     return currentModel;

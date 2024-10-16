@@ -21,7 +21,26 @@ class ChatModel {
   Map<String, dynamic> toJson() {
     return {
       "role": role,
-      "content": content,
+      if (base64Image == "" && documentText == "")
+        "content": content
+      else if (documentText != "")
+        "content": [
+          {
+            "type": "text",
+            "text": "$content § ${documentText!}",
+          }
+        ]
+      else if (base64Image != "")
+        "content": [
+          {
+            "type": "text",
+            "text": content,
+          },
+          {
+            "type": "image_url",
+            "image_url": {"url": "data:image/jpeg;base64,$base64Image"}
+          }
+        ]
     };
   }
 }

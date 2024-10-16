@@ -41,14 +41,11 @@ class ChatProvider with ChangeNotifier {
             base64Image != "") ||
         (chosenModelId.toLowerCase().startsWith("gpt-4") &&
             documentText != "")) {
-      List<ChatModel> chatListWithImages =
-          await ApiService.sendMessageWithImagesOrDocuments(
-        content: content,
-        modelId: chosenModelId,
-        base64Image: base64Image,
-        documentContent: documentText,
-      );
-      //chatList.addAll(chatListWithImages);
+      List<Map<String, dynamic>> chatListWithImages =
+          await ApiService.sendMessageGPT(
+              messages: messages, modelId: chosenModelId);
+      //(chatListWithImages);
+      messages.addAll(chatListWithImages);
     } else if (chosenModelId.toLowerCase().startsWith("gpt")) {
       List<Map<String, dynamic>> chatListLive = await ApiService.sendMessageGPT(
           messages: messages, modelId: chosenModelId);
@@ -56,7 +53,6 @@ class ChatProvider with ChangeNotifier {
     } else {
       List<Map<String, dynamic>> chatListLegacy = await ApiService.sendMessage(
           messages: messages, modelId: chosenModelId);
-      print(chatListLegacy);
       messages.addAll(chatListLegacy);
     }
     notifyListeners();

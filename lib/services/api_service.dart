@@ -36,7 +36,7 @@ class ApiService {
     }
   }
 
-  // Send Message using ChatGPT API live models
+  // Send Message using ChatGPT API live models (Provide String, document, text)
   static Future<List<Map<String, dynamic>>> sendMessageGPT(
       {required List<Map<String, dynamic>> messages,
       required String modelId}) async {
@@ -74,70 +74,6 @@ class ApiService {
         );
       }
       return messagesList;
-    } catch (error) {
-      log("error $error");
-      rethrow;
-    }
-  }
-
-  // Send Message with images
-  static Future<List<ChatModel>> sendMessageWithImagesOrDocuments(
-      {required String content,
-      required String modelId,
-      required String base64Image,
-      required String documentContent}) async {
-    try {
-      log("modelId $modelId");
-      var response = await http.post(
-        Uri.parse("$baseUrl/chat/completions"),
-        headers: {
-          'Authorization': 'Bearer $apiKey',
-          "Content-Type": "application/json"
-        },
-        body: jsonEncode(
-          {
-            "model": modelId,
-            "messages": [
-              {
-                "role": "user",
-                "content": [
-                  {
-                    "type": "text",
-                    "text": documentContent.isEmpty
-                        ? content
-                        : content + '\n' + documentContent,
-                  },
-                  // Use base64Image if it is not empty
-                  if (base64Image.isNotEmpty)
-                    {
-                      "type": "image_url",
-                      "image_url": {
-                        "url": "data:image/jpeg;base64,$base64Image"
-                      }
-                    }
-                ],
-              }
-            ]
-          },
-        ),
-      );
-      Map jsonResponse = json.decode(utf8.decode(response.bodyBytes));
-      if (jsonResponse['error'] != null) {
-        // print("jsonResponse['error'] ${jsonResponse['error']["message"]}");
-        throw HttpException(jsonResponse['error']["message"]);
-      }
-      List<ChatModel> chatList = [];
-      if (jsonResponse["choices"].length > 0) {
-        //log("jsonResponse[choices]text ${jsonResponse["choices"][0]["text"]}");
-        chatList = List.generate(
-          jsonResponse["choices"].length,
-          (index) => ChatModel(
-            content: jsonResponse["choices"][index]["message"]["content"],
-            role: "assistant",
-          ),
-        );
-      }
-      return chatList;
     } catch (error) {
       log("error $error");
       rethrow;

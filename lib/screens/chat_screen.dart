@@ -107,15 +107,34 @@ class _ChatScreenState extends State<ChatScreen> {
                 controller: _listScrollController,
                 itemCount: chatProvider.getMessages.length, //chatList.length,
                 itemBuilder: (context, index) {
-                  /*if (chatProvider.getChatList.last.role == assistant)
-                    _beginSpeak(chatProvider.getChatList.last.content);*/
+                  //log(chatProvider.getMessages.toString());
+                  String relatedContent = "";
+                  String relatedImage = "";
+
+                  var messageContent =
+                      chatProvider.getMessages[index]['content'];
+
+                  // Check if content is of type String
+                  if (messageContent is String) {
+                    relatedContent = messageContent;
+                  }
+                  // Check if it's a document text
+                  else if (messageContent.last?['text'] != null) {
+                    relatedContent =
+                        messageContent.first['text'].split('§').first;
+                  }
+                  // Check if it's a base64 image
+                  else if (messageContent.last?['image_url']?['url'] != null) {
+                    relatedContent = messageContent.first['text'];
+                    relatedImage =
+                        messageContent.last['image_url']['url'].split(',').last;
+                  }
                   return ChatWidget(
-                    content: chatProvider.getMessages[index]
-                        ['content'], // chatList[index].content,
+                    content: relatedContent, // chatList[index].content,
                     role: chatProvider.getMessages[index]
                         ['role'], //chatList[index].role,
                     shouldAnimate: chatProvider.getMessages.length - 1 == index,
-                    //image: chatProvider.getMessages[index].base64Image,
+                    image: relatedImage,
                   );
                 },
               ),

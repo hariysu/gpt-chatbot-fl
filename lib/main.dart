@@ -42,8 +42,7 @@ class MyApp extends StatelessWidget {
           ),
           colorScheme: ColorScheme.fromSeed(seedColor: Colors.white),
         ),
-        home: const HomePage(),
-        initialRoute: Routes.home,
+        initialRoute: Routes.chat,
         routes: {
           Routes.home: (context) => const HomePage(),
           Routes.login: (context) => const LoginScreen(),
