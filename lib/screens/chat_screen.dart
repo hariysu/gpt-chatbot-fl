@@ -49,6 +49,8 @@ class _ChatScreenState extends State<ChatScreen> {
 
   String? _documentText;
 
+  List<String> items = ['Chat 1', 'Chat 2', 'Chat 3'];
+
   @override
   void initState() {
     _initializeControllers();
@@ -82,7 +84,6 @@ class _ChatScreenState extends State<ChatScreen> {
     return Scaffold(
       appBar: AppBar(
         elevation: 20,
-        leading: const Icon(Icons.menu_rounded, color: Colors.white),
         title: const Text("GPT Chatbot",
             style: TextStyle(
                 color: Colors.white,
@@ -94,10 +95,37 @@ class _ChatScreenState extends State<ChatScreen> {
           IconButton(
             onPressed: () async =>
                 await Services.showModalSheet(context: context),
-            icon: const Icon(Icons.more_vert_rounded, color: Colors.white),
+            icon: const Icon(
+              Icons.more_vert_rounded,
+            ),
           ),
         ],
       ),
+      drawer: Drawer(
+          child: Padding(
+        padding: const EdgeInsets.only(top: 40),
+        child: ListView.builder(
+          padding: EdgeInsets.zero,
+          itemCount: items.length +
+              items.length -
+              1, // Her bir ListTile ve Divider için sayım
+          itemBuilder: (BuildContext context, int index) {
+            if (index.isEven) {
+              // ListTile oluşturuyoruz
+              int tileIndex = index ~/ 2;
+              return ListTile(
+                title: Text(items[tileIndex]),
+                onTap: () {
+                  Navigator.pop(context); // Drawer'ı kapatma işlemi
+                },
+              );
+            } else {
+              // Divider oluşturuyoruz
+              return const Divider();
+            }
+          },
+        ),
+      )),
       body: SafeArea(
         child: Column(
           children: [
@@ -207,7 +235,7 @@ class _ChatScreenState extends State<ChatScreen> {
                         backgroundColor: Colors.red,
                         shape: const CircleBorder(),
                         minimumSize: const Size(30, 30)),
-                    child: const Icon(Icons.close, color: Colors.white),
+                    child: const Icon(Icons.close),
                   ),
                 ),
               ],
@@ -232,7 +260,6 @@ class _ChatScreenState extends State<ChatScreen> {
               children: [
                 const Icon(
                   Icons.file_present,
-                  color: Colors.white,
                   size: 40,
                 ),
                 Positioned(
@@ -244,7 +271,7 @@ class _ChatScreenState extends State<ChatScreen> {
                         backgroundColor: Colors.red,
                         shape: const CircleBorder(),
                         minimumSize: const Size(20, 20)),
-                    child: const Icon(Icons.close, color: Colors.white),
+                    child: const Icon(Icons.close),
                   ),
                 ),
               ],
@@ -264,7 +291,6 @@ class _ChatScreenState extends State<ChatScreen> {
       onPressed: _pickImageFromGallery,
       icon: const Icon(
         Icons.image,
-        color: Colors.white,
       ),
     );
   }
@@ -272,8 +298,9 @@ class _ChatScreenState extends State<ChatScreen> {
   Widget _buildMicButton() {
     return IconButton(
       onPressed: _isListening ? _stopListening : _startListening,
-      icon:
-          Icon(_isListening ? Icons.mic : Icons.mic_none, color: Colors.white),
+      icon: Icon(
+        _isListening ? Icons.mic : Icons.mic_none,
+      ),
     );
   }
 
@@ -282,7 +309,6 @@ class _ChatScreenState extends State<ChatScreen> {
       onPressed: _pickFileFromDevice,
       icon: const Icon(
         Icons.folder,
-        color: Colors.white,
       ),
     );
   }
@@ -361,7 +387,6 @@ class _ChatScreenState extends State<ChatScreen> {
       },
       icon: const Icon(
         Icons.send,
-        color: Colors.white,
       ),
     );
   }

@@ -36,11 +36,25 @@ class MyApp extends StatelessWidget {
           scaffoldBackgroundColor: scaffoldBackgroundColor,
           appBarTheme: AppBarTheme(
             color: cardColor,
+            iconTheme: const IconThemeData(
+              color: Colors.red, // AppBar ve Drawer icon rengi
+            ),
           ),
           textTheme: TextTheme(
             bodyLarge: TextStyle(color: iconAndTextColor), //textColors
           ),
+          iconTheme: const IconThemeData(
+            color: Colors.green, // Uygulamadaki tüm ikonların rengi
+          ),
           colorScheme: ColorScheme.fromSeed(seedColor: Colors.white),
+          // Drawer rengi ayarı
+          drawerTheme: DrawerThemeData(
+            backgroundColor:
+                scaffoldBackgroundColor, // Drawer için istediğin rengi burada ayarlayabilirsin
+          ),
+          listTileTheme: const ListTileThemeData(
+            textColor: Colors.yellow, // Drawer'daki ListTile text rengi
+          ),
         ),
         initialRoute: Routes.chat,
         routes: {
