@@ -406,7 +406,6 @@ class _ChatScreenState extends State<ChatScreen> {
           chosenModelId: modelsProvider.getCurrentModel,
           base64Image: base64Image ?? "",
           documentText: _documentText ?? "");
-      _beginSpeaking(chatProvider.getMessages.last['content']);
     } catch (error) {
       // for API Errors
       log("error $error");
@@ -465,7 +464,8 @@ class _ChatScreenState extends State<ChatScreen> {
   void _stopListening() async {
     await speech.stop();
     setState(() => _isListening = false);
-    _handleMessageSubmission();
+    await _handleMessageSubmission();
+    _beginSpeaking(chatProvider.getMessages.last['content']);
   }
 
   void _onSpeechResult(SpeechRecognitionResult result) {
