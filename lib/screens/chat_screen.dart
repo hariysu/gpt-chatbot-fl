@@ -33,7 +33,6 @@ class _ChatScreenState extends State<ChatScreen> {
   late TextEditingController textEditingController;
   late ScrollController _listScrollController;
   late FocusNode focusNode;
-  File? _imageFile;
 
   String? base64Image;
 
@@ -235,14 +234,16 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Widget _buildImagePreview() {
-    return _imageFile != null
+    final imageBytes =
+        base64Decode(base64Image ?? ''); // Convert Base64 data into Uint8List
+    return base64Image != null
         ? Expanded(
             flex: 1,
             child: Stack(
               clipBehavior: Clip.none,
               children: [
-                Image.file(
-                  _imageFile!,
+                Image.memory(
+                  imageBytes,
                   fit: BoxFit.cover,
                   width: 200,
                   height: 100,
@@ -380,10 +381,10 @@ class _ChatScreenState extends State<ChatScreen> {
         await ImagePicker().pickImage(source: ImageSource.gallery);
     if (pickedImage != null) {
       setState(() {
-        _imageFile = File(pickedImage.path);
+        File? imageFile = File(pickedImage.path);
         /*if (_imageFile == null) return;*/
         // Convert image to base64
-        base64Image = base64Encode(_imageFile!.readAsBytesSync());
+        base64Image = base64Encode(imageFile.readAsBytesSync());
       });
     } else {
       log('No image selected.');
@@ -391,7 +392,7 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   void clearDocumentAndImage() {
-    _imageFile = base64Image = _documentText = null;
+    base64Image = _documentText = null;
   }
 
   Widget _buildSendButton() {
@@ -417,9 +418,9 @@ class _ChatScreenState extends State<ChatScreen> {
   Future<void> _handleMessageSubmission() async {
     await _sendMessageFCT(
         modelsProvider: modelsProvider, chatProvider: chatProvider);
-    /* setState(() {
+    setState(() {
       clearDocumentAndImage();
-    }); */
+    });
   }
 
   Future<void> _sendMessageFCT(
