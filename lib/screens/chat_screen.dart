@@ -251,7 +251,11 @@ class _ChatScreenState extends State<ChatScreen> {
                   top: -20,
                   right: -25,
                   child: ElevatedButton(
-                    onPressed: _clearImage,
+                    onPressed: () {
+                      setState(() {
+                        clearDocumentAndImage();
+                      });
+                    },
                     style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.red,
                         shape: const CircleBorder(),
@@ -263,13 +267,6 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
           )
         : Container();
-  }
-
-  void _clearImage() {
-    setState(() {
-      _imageFile = null;
-      base64Image = null;
-    });
   }
 
   Widget _buildDocumentPreview() {
@@ -287,7 +284,11 @@ class _ChatScreenState extends State<ChatScreen> {
                   top: -20,
                   right: -25,
                   child: ElevatedButton(
-                    onPressed: _clearDocument,
+                    onPressed: () {
+                      setState(() {
+                        clearDocumentAndImage();
+                      });
+                    },
                     style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.red,
                         shape: const CircleBorder(),
@@ -299,12 +300,6 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
           )
         : Container();
-  }
-
-  void _clearDocument() {
-    setState(() {
-      _documentText = null;
-    });
   }
 
   Widget _buildImagePickerButton() {
@@ -391,20 +386,18 @@ class _ChatScreenState extends State<ChatScreen> {
         base64Image = base64Encode(_imageFile!.readAsBytesSync());
       });
     } else {
-      print('No image selected.');
+      log('No image selected.');
     }
+  }
+
+  void clearDocumentAndImage() {
+    _imageFile = base64Image = _documentText = null;
   }
 
   Widget _buildSendButton() {
     return IconButton(
       onPressed: () async {
-        await _sendMessageFCT(
-            modelsProvider: modelsProvider, chatProvider: chatProvider);
-        setState(() {
-          base64Image = null;
-          //_imageFile = null;
-          _documentText = null;
-        });
+        _handleMessageSubmission();
       },
       icon: const Icon(
         Icons.send,
@@ -424,10 +417,9 @@ class _ChatScreenState extends State<ChatScreen> {
   Future<void> _handleMessageSubmission() async {
     await _sendMessageFCT(
         modelsProvider: modelsProvider, chatProvider: chatProvider);
-    setState(() {
-      base64Image = null;
-      _documentText = null;
-    });
+    /* setState(() {
+      clearDocumentAndImage();
+    }); */
   }
 
   Future<void> _sendMessageFCT(
@@ -448,10 +440,7 @@ class _ChatScreenState extends State<ChatScreen> {
           : textEditingController.text;
       _prepareForNewMessage(content);
       await chatProvider.sendMessageAndGetAnswers(
-          content: content,
-          chosenModelId: modelsProvider.getCurrentModel,
-          base64Image: base64Image ?? "",
-          documentText: _documentText ?? "");
+          chosenModelId: modelsProvider.getCurrentModel);
     } catch (error) {
       // for API Errors
       log("error $error");
@@ -475,7 +464,7 @@ class _ChatScreenState extends State<ChatScreen> {
           documentText: _documentText);
       textEditingController.clear();
       focusNode.unfocus();
-      _imageFile = null;
+      clearDocumentAndImage();
       // Scrolls after user message printed to screen
       _scrollToBottom();
     });
@@ -521,7 +510,7 @@ class _ChatScreenState extends State<ChatScreen> {
       if (result.finalResult) {
         _stopListening();
       }
-      print(textOfSpeech);
+      log(textOfSpeech);
     });
   }
 

@@ -18,7 +18,7 @@ class ChatProvider with ChangeNotifier {
     return messages;
   }
 
-  // Adds user messages to the chatList
+  // Adds user messages to the messages
   void addUserMessage(
       {required String content, String? base64Image, String? documentText}) {
     messages.add(ChatModel(
@@ -30,23 +30,9 @@ class ChatProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  // Adds GPT responses to the chatList
-  Future<void> sendMessageAndGetAnswers(
-      {required String content,
-      required String chosenModelId,
-      required String base64Image,
-      required String documentText}) async {
-    // Only for messages with images or documents except dall-e
-    if ((chosenModelId.toLowerCase().startsWith("gpt-4") &&
-            base64Image != "") ||
-        (chosenModelId.toLowerCase().startsWith("gpt-4") &&
-            documentText != "")) {
-      List<Map<String, dynamic>> chatListWithImages =
-          await ApiService.sendMessageGPT(
-              messages: messages, modelId: chosenModelId);
-      //(chatListWithImages);
-      messages.addAll(chatListWithImages);
-    } else if (chosenModelId.toLowerCase().startsWith("gpt")) {
+  // Sends request using messages, then adds GPT responses to the messages
+  Future<void> sendMessageAndGetAnswers({required String chosenModelId}) async {
+    if (chosenModelId.toLowerCase().startsWith("gpt")) {
       List<Map<String, dynamic>> chatListLive = await ApiService.sendMessageGPT(
           messages: messages, modelId: chosenModelId);
       messages.addAll(chatListLive);
