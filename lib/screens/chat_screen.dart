@@ -17,6 +17,7 @@ import 'package:speech_to_text/speech_recognition_result.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 import 'package:syncfusion_flutter_pdf/pdf.dart';
 
+import '../models/chat_model.dart';
 import '../providers/models_provider.dart';
 import '../widgets/text_widget.dart';
 
@@ -47,6 +48,7 @@ class _ChatScreenState extends State<ChatScreen> {
   final FlutterTts flutterTts = FlutterTts();
 
   String? _documentText;
+  String? _documentName;
 
   @override
   void initState() {
@@ -111,9 +113,12 @@ class _ChatScreenState extends State<ChatScreen> {
                   //log(chatProvider.getMessages.toString());
                   String relatedContent = "";
                   String relatedImage = "";
+                  String documentNameAndExtension = "";
 
                   var messageContent =
                       chatProvider.getMessages[index]['content'];
+                  /* print(ChatModel.fromJson(
+                      chatProvider.getMessages[index].content) /* .content */); */
 
                   // Check if content is of type String
                   if (messageContent is String) {
@@ -123,6 +128,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   else if (messageContent.last?['text'] != null) {
                     relatedContent =
                         messageContent.first['text'].split('   ').first;
+                    documentNameAndExtension = messageContent.first['name'];
                   }
                   // Check if it's a base64 image
                   else if (messageContent.last?['image_url']?['url'] != null) {
@@ -141,6 +147,7 @@ class _ChatScreenState extends State<ChatScreen> {
                         ['role'], //chatList[index].role,
                     shouldAnimate: chatProvider.getMessages.length - 1 == index,
                     image: relatedImage,
+                    documentName: documentNameAndExtension,
                   );
                 },
               ),
@@ -339,6 +346,8 @@ class _ChatScreenState extends State<ChatScreen> {
     if (result != null) {
       File file = File(result.files.single.path!);
       String? fileExtension = result.files.single.extension;
+      _documentName = result.files.single.name;
+      //print(_documentName);
 
       // Text extraction operations
       _documentText = await _extractTextFromFile(file, fileExtension);
@@ -460,9 +469,11 @@ class _ChatScreenState extends State<ChatScreen> {
       _isTyping = true;
       // chatList.add(ChatModel(content: textEditingController.text, role: "user"));
       chatProvider.addUserMessage(
-          content: content,
-          base64Image: base64Image,
-          documentText: _documentText);
+        content: content,
+        base64Image: base64Image,
+        documentText: _documentText,
+        documentName: _documentName,
+      );
       textEditingController.clear();
       focusNode.unfocus();
       clearDocumentAndImage();

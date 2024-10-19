@@ -20,12 +20,16 @@ class ChatProvider with ChangeNotifier {
 
   // Adds user messages to the messages
   void addUserMessage(
-      {required String content, String? base64Image, String? documentText}) {
+      {required String content,
+      String? base64Image,
+      String? documentText,
+      String? documentName}) {
     messages.add(ChatModel(
             content: content,
             role: "user",
             base64Image: base64Image ?? "",
-            documentText: documentText ?? "")
+            documentText: documentText ?? "",
+            documentName: documentName ?? "")
         .toJson());
     notifyListeners();
   }

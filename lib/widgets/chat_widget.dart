@@ -10,12 +10,14 @@ class ChatWidget extends StatelessWidget {
       required this.content,
       required this.role,
       this.shouldAnimate = false,
-      this.image = ""});
+      this.image = "",
+      this.documentName});
 
   final String content;
   final String role;
   final bool shouldAnimate;
   final String? image;
+  final String? documentName;
 
   @override
   Widget build(BuildContext context) {
@@ -46,6 +48,27 @@ class ChatWidget extends StatelessWidget {
                               fit: BoxFit.cover,
                               width: 200,
                               height: 200,
+                            ),
+                          if (documentName != "")
+                            Card(
+                              child: Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: Column(
+                                  children: [
+                                    if (documentName!.split('.').last == "pdf")
+                                      const Icon(Icons.picture_as_pdf_outlined,
+                                          size: 40),
+                                    if (documentName!.split('.').last == "txt")
+                                      const Icon(Icons.text_fields, size: 40),
+                                    if (documentName!.split('.').last ==
+                                            "doc" ||
+                                        documentName!.split('.').last == "docx")
+                                      const Icon(Icons.table_restaurant,
+                                          size: 40),
+                                    Text(documentName!),
+                                  ],
+                                ),
+                              ),
                             ),
                           Text(
                             content,
