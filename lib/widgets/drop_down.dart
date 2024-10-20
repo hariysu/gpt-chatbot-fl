@@ -45,7 +45,6 @@ class _ModelsDropDownWidgetState extends State<ModelsDropDownWidget> {
               : FittedBox(
                   child: DropdownButton(
                     dropdownColor: scaffoldBackgroundColor,
-                    iconEnabledColor: Colors.white,
                     items: List<DropdownMenuItem<String>>.generate(
                       snapshot.data!.length,
                       (index) => DropdownMenuItem(

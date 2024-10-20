@@ -17,6 +17,7 @@ import 'package:speech_to_text/speech_recognition_result.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 import 'package:syncfusion_flutter_pdf/pdf.dart';
 
+import '../models/chat_model.dart';
 import '../providers/models_provider.dart';
 import '../widgets/text_widget.dart';
 
@@ -33,7 +34,6 @@ class _ChatScreenState extends State<ChatScreen> {
   late TextEditingController textEditingController;
   late ScrollController _listScrollController;
   late FocusNode focusNode;
-  File? _imageFile;
 
   String? base64Image;
 
@@ -48,6 +48,7 @@ class _ChatScreenState extends State<ChatScreen> {
   final FlutterTts flutterTts = FlutterTts();
 
   String? _documentText;
+  String? _documentName;
 
   @override
   void initState() {
@@ -82,7 +83,6 @@ class _ChatScreenState extends State<ChatScreen> {
     return Scaffold(
       appBar: AppBar(
         elevation: 20,
-        leading: const Icon(Icons.menu_rounded, color: Colors.white),
         title: const Text("GPT Chatbot",
             style: TextStyle(
                 color: Colors.white,
@@ -94,10 +94,13 @@ class _ChatScreenState extends State<ChatScreen> {
           IconButton(
             onPressed: () async =>
                 await Services.showModalSheet(context: context),
-            icon: const Icon(Icons.more_vert_rounded, color: Colors.white),
+            icon: const Icon(
+              Icons.more_vert_rounded,
+            ),
           ),
         ],
       ),
+      drawer: _buildDrawer(context),
       body: SafeArea(
         child: Column(
           children: [
@@ -110,9 +113,12 @@ class _ChatScreenState extends State<ChatScreen> {
                   //log(chatProvider.getMessages.toString());
                   String relatedContent = "";
                   String relatedImage = "";
+                  String documentNameAndExtension = "";
 
                   var messageContent =
                       chatProvider.getMessages[index]['content'];
+                  /* print(ChatModel.fromJson(
+                      chatProvider.getMessages[index].content) /* .content */); */
 
                   // Check if content is of type String
                   if (messageContent is String) {
@@ -121,7 +127,8 @@ class _ChatScreenState extends State<ChatScreen> {
                   // Check if it's a document text
                   else if (messageContent.last?['text'] != null) {
                     relatedContent =
-                        messageContent.first['text'].split('§').first;
+                        messageContent.first['text'].split('   ').first;
+                    documentNameAndExtension = messageContent.first['name'];
                   }
                   // Check if it's a base64 image
                   else if (messageContent.last?['image_url']?['url'] != null) {
@@ -129,12 +136,18 @@ class _ChatScreenState extends State<ChatScreen> {
                     relatedImage =
                         messageContent.last['image_url']['url'].split(',').last;
                   }
+                  // Check to skip the first message
+                  if (index == 0) {
+                    return const SizedBox.shrink();
+                  }
+                  // Show other messages in listview
                   return ChatWidget(
                     content: relatedContent, // chatList[index].content,
                     role: chatProvider.getMessages[index]
                         ['role'], //chatList[index].role,
                     shouldAnimate: chatProvider.getMessages.length - 1 == index,
                     image: relatedImage,
+                    documentName: documentNameAndExtension,
                   );
                 },
               ),
@@ -185,15 +198,59 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
+  Drawer _buildDrawer(BuildContext context) {
+    return Drawer(
+      child: Padding(
+        padding: const EdgeInsets.only(top: 40),
+        child: ListView.builder(
+          padding: EdgeInsets.zero,
+          itemCount: 5 /* chatProvider.getMessages.length */,
+          itemBuilder: (BuildContext context, int index) {
+            String? messageContent = _getMessageContent(index);
+            String listTileContent =
+                _getTruncatedMessageContent(messageContent);
+            return _buildDrawerListTile(listTileContent, context);
+          },
+        ),
+      ),
+    );
+  }
+
+  String? _getMessageContent(int index) {
+    // Get the first message with content type String
+    return chatProvider.getMessages
+            .where((message) => message['content'] is String)
+            .elementAt(1)['content'] ??
+        ''; // Retrieve content from related index
+  }
+
+  String _getTruncatedMessageContent(String? messageContent) {
+    // Cut and show message content
+    return (messageContent?.length ?? 0) > 50
+        ? '${messageContent!.substring(0, 50)}...'
+        : messageContent ?? '';
+  }
+
+  ListTile _buildDrawerListTile(String listTileContent, BuildContext context) {
+    return ListTile(
+      title: Text(listTileContent),
+      onTap: () {
+        Navigator.pop(context);
+      },
+    );
+  }
+
   Widget _buildImagePreview() {
-    return _imageFile != null
+    final imageBytes =
+        base64Decode(base64Image ?? ''); // Convert Base64 data into Uint8List
+    return base64Image != null
         ? Expanded(
             flex: 1,
             child: Stack(
               clipBehavior: Clip.none,
               children: [
-                Image.file(
-                  _imageFile!,
+                Image.memory(
+                  imageBytes,
                   fit: BoxFit.cover,
                   width: 200,
                   height: 100,
@@ -202,25 +259,22 @@ class _ChatScreenState extends State<ChatScreen> {
                   top: -20,
                   right: -25,
                   child: ElevatedButton(
-                    onPressed: _clearImage,
+                    onPressed: () {
+                      setState(() {
+                        clearDocumentAndImage();
+                      });
+                    },
                     style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.red,
                         shape: const CircleBorder(),
                         minimumSize: const Size(30, 30)),
-                    child: const Icon(Icons.close, color: Colors.white),
+                    child: const Icon(Icons.close),
                   ),
                 ),
               ],
             ),
           )
         : Container();
-  }
-
-  void _clearImage() {
-    setState(() {
-      _imageFile = null;
-      base64Image = null;
-    });
   }
 
   Widget _buildDocumentPreview() {
@@ -232,19 +286,22 @@ class _ChatScreenState extends State<ChatScreen> {
               children: [
                 const Icon(
                   Icons.file_present,
-                  color: Colors.white,
                   size: 40,
                 ),
                 Positioned(
                   top: -20,
                   right: -25,
                   child: ElevatedButton(
-                    onPressed: _clearDocument,
+                    onPressed: () {
+                      setState(() {
+                        clearDocumentAndImage();
+                      });
+                    },
                     style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.red,
                         shape: const CircleBorder(),
                         minimumSize: const Size(20, 20)),
-                    child: const Icon(Icons.close, color: Colors.white),
+                    child: const Icon(Icons.close),
                   ),
                 ),
               ],
@@ -253,18 +310,11 @@ class _ChatScreenState extends State<ChatScreen> {
         : Container();
   }
 
-  void _clearDocument() {
-    setState(() {
-      _documentText = null;
-    });
-  }
-
   Widget _buildImagePickerButton() {
     return IconButton(
       onPressed: _pickImageFromGallery,
       icon: const Icon(
         Icons.image,
-        color: Colors.white,
       ),
     );
   }
@@ -272,8 +322,9 @@ class _ChatScreenState extends State<ChatScreen> {
   Widget _buildMicButton() {
     return IconButton(
       onPressed: _isListening ? _stopListening : _startListening,
-      icon:
-          Icon(_isListening ? Icons.mic : Icons.mic_none, color: Colors.white),
+      icon: Icon(
+        _isListening ? Icons.mic : Icons.mic_none,
+      ),
     );
   }
 
@@ -282,7 +333,6 @@ class _ChatScreenState extends State<ChatScreen> {
       onPressed: _pickFileFromDevice,
       icon: const Icon(
         Icons.folder,
-        color: Colors.white,
       ),
     );
   }
@@ -296,6 +346,8 @@ class _ChatScreenState extends State<ChatScreen> {
     if (result != null) {
       File file = File(result.files.single.path!);
       String? fileExtension = result.files.single.extension;
+      _documentName = result.files.single.name;
+      //print(_documentName);
 
       // Text extraction operations
       _documentText = await _extractTextFromFile(file, fileExtension);
@@ -338,30 +390,27 @@ class _ChatScreenState extends State<ChatScreen> {
         await ImagePicker().pickImage(source: ImageSource.gallery);
     if (pickedImage != null) {
       setState(() {
-        _imageFile = File(pickedImage.path);
+        File? imageFile = File(pickedImage.path);
         /*if (_imageFile == null) return;*/
         // Convert image to base64
-        base64Image = base64Encode(_imageFile!.readAsBytesSync());
+        base64Image = base64Encode(imageFile.readAsBytesSync());
       });
     } else {
-      print('No image selected.');
+      log('No image selected.');
     }
+  }
+
+  void clearDocumentAndImage() {
+    base64Image = _documentText = null;
   }
 
   Widget _buildSendButton() {
     return IconButton(
       onPressed: () async {
-        await _sendMessageFCT(
-            modelsProvider: modelsProvider, chatProvider: chatProvider);
-        setState(() {
-          base64Image = null;
-          //_imageFile = null;
-          _documentText = null;
-        });
+        _handleMessageSubmission();
       },
       icon: const Icon(
         Icons.send,
-        color: Colors.white,
       ),
     );
   }
@@ -379,8 +428,7 @@ class _ChatScreenState extends State<ChatScreen> {
     await _sendMessageFCT(
         modelsProvider: modelsProvider, chatProvider: chatProvider);
     setState(() {
-      base64Image = null;
-      _documentText = null;
+      clearDocumentAndImage();
     });
   }
 
@@ -402,11 +450,7 @@ class _ChatScreenState extends State<ChatScreen> {
           : textEditingController.text;
       _prepareForNewMessage(content);
       await chatProvider.sendMessageAndGetAnswers(
-          content: content,
-          chosenModelId: modelsProvider.getCurrentModel,
-          base64Image: base64Image ?? "",
-          documentText: _documentText ?? "");
-      _beginSpeaking(chatProvider.getMessages.last['content']);
+          chosenModelId: modelsProvider.getCurrentModel);
     } catch (error) {
       // for API Errors
       log("error $error");
@@ -425,12 +469,14 @@ class _ChatScreenState extends State<ChatScreen> {
       _isTyping = true;
       // chatList.add(ChatModel(content: textEditingController.text, role: "user"));
       chatProvider.addUserMessage(
-          content: content,
-          base64Image: base64Image,
-          documentText: _documentText);
+        content: content,
+        base64Image: base64Image,
+        documentText: _documentText,
+        documentName: _documentName,
+      );
       textEditingController.clear();
       focusNode.unfocus();
-      _imageFile = null;
+      clearDocumentAndImage();
       // Scrolls after user message printed to screen
       _scrollToBottom();
     });
@@ -465,7 +511,8 @@ class _ChatScreenState extends State<ChatScreen> {
   void _stopListening() async {
     await speech.stop();
     setState(() => _isListening = false);
-    _handleMessageSubmission();
+    await _handleMessageSubmission();
+    _beginSpeaking(chatProvider.getMessages.last['content']);
   }
 
   void _onSpeechResult(SpeechRecognitionResult result) {
@@ -475,7 +522,7 @@ class _ChatScreenState extends State<ChatScreen> {
       if (result.finalResult) {
         _stopListening();
       }
-      print(textOfSpeech);
+      log(textOfSpeech);
     });
   }
 
