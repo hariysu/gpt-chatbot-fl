@@ -40,6 +40,34 @@ class ApiService {
   static Future<List<Map<String, dynamic>>> sendMessageGPT(
       {required List<Map<String, dynamic>> messages,
       required String modelId}) async {
+    /* Eğer Provider'ın dinlememesi için messages'ta yaptığınız değişikliklerin tamamen izole edilmesini istiyorsanız, bu durumda List.from() kopyalama yöntemi yerine derin kopyalama yapmanız gerekebilir. Çünkü List.from() sadece üst düzeyde bir kopyalama yapar, iç içe listeler veya map yapıları varsa bunlar kopyalanmaz. Derin kopyalama yapılmazsa, Provider hâlâ orijinal veriyi izleyebilir. */
+    /* List<Map<String, dynamic>> sanitizedMessages =
+        List<Map<String, dynamic>>.from(messages); */
+
+    /* We used jsonEncode() and then jsonDecode() to create a deep copy of messages. In this way, all nested structures were also copied. */
+    // Deep copy of the original messages list to avoid modifying the provider.
+    List<Map<String, dynamic>> sanitizedMessages =
+        List<Map<String, dynamic>>.from(jsonDecode(jsonEncode(messages)));
+
+    /* The removeNamesFromList function traverses the list, checks the name key and removes it. If there are nested lists, it checks them with the same function.*/
+    void removeNamesFromList(List<dynamic> list) {
+      for (var item in list) {
+        // Check each item
+        if (item is Map<String, dynamic> && item.containsKey('name')) {
+          // If 'name' exists, remove it
+          item.remove('name');
+        }
+
+        // If there are nested lists, check them too
+        if (item.containsKey('content') && item['content'] is List) {
+          removeNamesFromList(item['content']);
+        }
+      }
+    }
+
+    // Remove 'name' fields from the deep copy
+    removeNamesFromList(sanitizedMessages);
+
     try {
       log("modelId $modelId");
       var response = await http.post(
@@ -51,20 +79,18 @@ class ApiService {
         body: jsonEncode(
           {
             "model": modelId,
-            "messages": messages,
+            "messages": sanitizedMessages, // We send sanitizedMessages to API
           },
         ),
       );
-      /*print(jsonDecode(response.body));*/
+
       Map jsonResponse = json.decode(utf8.decode(response.bodyBytes));
       if (jsonResponse['error'] != null) {
-        // print("jsonResponse['error'] ${jsonResponse['error']["message"]}");
         throw HttpException(jsonResponse['error']["message"]);
       }
-      //List<ChatModel> chatList = [];
+
       List<Map<String, dynamic>> messagesList = [];
       if (jsonResponse["choices"].length > 0) {
-        // log("jsonResponse[choices]text ${jsonResponse["choices"][0]["text"]}");
         messagesList = List.generate(
           jsonResponse["choices"].length,
           (index) => ChatModel(
