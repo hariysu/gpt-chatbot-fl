@@ -1,19 +1,42 @@
-import 'dart:developer';
-
 import 'package:flutter/cupertino.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 
 import '../models/chat_model.dart';
 import '../services/api_service.dart';
 
 class ChatProvider with ChangeNotifier {
-  /* List<ChatModel> chatList = [];
-  List<ChatModel> get getChatList {
-    return chatList;
-  } */
-
+  //
   List<Map<String, dynamic>> messages = [
     {"role": "system", "content": "You are a helpful assistant."}
   ];
+
+  Box? chatBox;
+
+  ChatProvider() {
+    _initHive();
+  }
+
+  Future<void> _initHive() async {
+    chatBox = await Hive.openBox('chatBox'); // Open Hive box
+
+    // Load if there is data in the box
+    if (chatBox!.isNotEmpty) {
+      // print(messages.runtimeType);  List<Map<String, dynamic>>
+      // print(chatBox!.get('messages', defaultValue: messages).runtimeType);  List<dynamic>
+
+      // Properly cast the returned data
+      final List<dynamic> savedMessages =
+          chatBox!.get('messages', defaultValue: messages);
+
+      // This conversion transforms 'List<dynamic>' to 'List<Map<String, dynamic>>'
+      messages = savedMessages
+          .map((message) => Map<String, dynamic>.from(message))
+          .toList();
+    }
+
+    notifyListeners();
+  }
+
   List<Map<String, dynamic>> get getMessages {
     return messages;
   }
@@ -24,13 +47,15 @@ class ChatProvider with ChangeNotifier {
       String? base64Image,
       String? documentText,
       String? documentName}) {
-    messages.add(ChatModel(
+    final message = ChatModel(
             content: content,
             role: "user",
             base64Image: base64Image ?? "",
             documentText: documentText ?? "",
             documentName: documentName ?? "")
-        .toJson());
+        .toJson();
+    messages.add(message);
+    chatBox!.put('messages', messages); // Save messages to Hive
     notifyListeners();
   }
 
@@ -45,6 +70,7 @@ class ChatProvider with ChangeNotifier {
           messages: messages, modelId: chosenModelId);
       messages.addAll(chatListLegacy);
     }
+    chatBox!.put('messages', messages); // Save updated messages to Hive
     notifyListeners();
   }
 }
