@@ -17,7 +17,6 @@ import 'package:speech_to_text/speech_recognition_result.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 import 'package:syncfusion_flutter_pdf/pdf.dart';
 
-import '../models/chat_model.dart';
 import '../providers/models_provider.dart';
 import '../widgets/text_widget.dart';
 
@@ -202,15 +201,22 @@ class _ChatScreenState extends State<ChatScreen> {
     return Drawer(
       child: Padding(
         padding: const EdgeInsets.only(top: 40),
-        child: ListView.builder(
-          padding: EdgeInsets.zero,
-          itemCount: 5 /* chatProvider.getMessages.length */,
-          itemBuilder: (BuildContext context, int index) {
-            String? messageContent = _getMessageContent(index);
-            String listTileContent =
-                _getTruncatedMessageContent(messageContent);
-            return _buildDrawerListTile(listTileContent, context);
-          },
+        child: Column(
+          children: [
+            IconButton(onPressed: () {}, icon: const Icon(Icons.add)),
+            Expanded(
+              child: ListView.builder(
+                padding: EdgeInsets.zero,
+                itemCount: 5 /* chatProvider.getMessages.length */,
+                itemBuilder: (BuildContext context, int index) {
+                  String? messageContent = _getMessageContent(index);
+                  String listTileContent =
+                      _getTruncatedMessageContent(messageContent);
+                  return _buildDrawerListTile(listTileContent, context);
+                },
+              ),
+            ),
+          ],
         ),
       ),
     );
