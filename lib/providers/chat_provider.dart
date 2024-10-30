@@ -112,8 +112,6 @@ class ChatProvider with ChangeNotifier {
       // Update currentChatId if the deleted chat is currentChatId
       if (currentChatId == chatId) {
         currentChatId = allChats.isNotEmpty ? allChats.keys.last : null;
-        print(allChats.keys);
-        print(currentChatId);
         lastChatIdBox!.put('lastChatId', currentChatId);
       }
 

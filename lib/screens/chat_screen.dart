@@ -223,11 +223,9 @@ class _ChatScreenState extends State<ChatScreen> {
                     .length, // we have to use listen true otherwise it doesn't update
                 itemBuilder: (BuildContext context, int index) {
                   String chatId = chatProvider.allChats.keys.elementAt(index);
-                  String? filteredContent = _getMessageContent(index);
-                  String listTileContent =
-                      _getTruncatedMessageContent(filteredContent);
+                  String? listTileContent = _getMessageContentForTab(index);
                   //String tabName = chatProvider.allChats.values.elementAt(index)
-                  return filteredContent != null
+                  return listTileContent != null
                       ? Dismissible(
                           key: Key(chatId),
                           direction: DismissDirection.endToStart,
@@ -245,7 +243,7 @@ class _ChatScreenState extends State<ChatScreen> {
                             child: const Icon(Icons.delete),
                           ),
                           child: ListTile(
-                            title: Text(listTileContent),
+                            title: Text(listTileContent, maxLines: 2),
                             onTap: () {
                               chatProvider.currentChatId = chatId;
                               Navigator.push(
@@ -254,6 +252,8 @@ class _ChatScreenState extends State<ChatScreen> {
                                     builder: (context) => const ChatScreen()),
                               );
                             },
+                            selected: chatProvider.currentChatId == chatId,
+                            selectedTileColor: Colors.blueGrey.shade500,
                           ),
                         )
                       : const SizedBox.shrink();
@@ -266,7 +266,7 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
-  String? _getMessageContent(int index) {
+  String? _getMessageContentForTab(int index) {
     // Get the first message with content type String to show in listview
     var filteredMessages = chatProvider.allChats.values
         .elementAt(index)
@@ -279,13 +279,6 @@ class _ChatScreenState extends State<ChatScreen> {
           : null;
     }
     return null;
-  }
-
-  String _getTruncatedMessageContent(String? filteredMessageContent) {
-    // Cut and show message content
-    return (filteredMessageContent?.length ?? 0) > 50
-        ? '${filteredMessageContent!.substring(0, 50)}...'
-        : filteredMessageContent ?? '';
   }
 
   Widget _buildImagePreview() {
