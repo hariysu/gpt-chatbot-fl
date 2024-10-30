@@ -39,6 +39,7 @@ class ChatProvider with ChangeNotifier {
     );
     // Restore currentChatId from lastChatId(To open user's last chat screen)
     currentChatId = lastChatIdBox!.get('lastChatId');
+    print(currentChatId);
     notifyListeners();
   }
 
@@ -99,6 +100,25 @@ class ChatProvider with ChangeNotifier {
         sentChatId); // Update the last chat ID to remember last conversation
 
     notifyListeners();
+  }
+
+  // Deletes a chat by its ID
+  void deleteChat(String chatId) {
+    // Check if the chat exists
+    if (allChats.containsKey(chatId)) {
+      allChats.remove(chatId); // Remove chat from the map
+      chatBox!.delete(chatId); // Delete chat from Hive box
+
+      // Update currentChatId if the deleted chat is currentChatId
+      if (currentChatId == chatId) {
+        currentChatId = allChats.isNotEmpty ? allChats.keys.last : null;
+        print(allChats.keys);
+        print(currentChatId);
+        lastChatIdBox!.put('lastChatId', currentChatId);
+      }
+
+      notifyListeners();
+    }
   }
 }
 

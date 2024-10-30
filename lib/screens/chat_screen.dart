@@ -117,6 +117,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
                   var messageContent =
                       chatProvider.currentMessages[index]['content'];
+
                   /* print(ChatModel.fromJson(
                       chatProvider.getMessages[index].content) /* .content */); */
 
@@ -227,16 +228,33 @@ class _ChatScreenState extends State<ChatScreen> {
                       _getTruncatedMessageContent(filteredContent);
                   //String tabName = chatProvider.allChats.values.elementAt(index)
                   return filteredContent != null
-                      ? ListTile(
-                          title: Text(listTileContent),
-                          onTap: () {
-                            chatProvider.currentChatId = chatId;
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (context) => const ChatScreen()),
+                      ? Dismissible(
+                          key: Key(chatId),
+                          direction: DismissDirection.endToStart,
+                          onDismissed: (direction) {
+                            // Remove item
+                            chatProvider.deleteChat(chatId);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text("Chat deleted")),
                             );
                           },
+                          background: Container(
+                            color: Colors.red,
+                            alignment: Alignment.centerRight,
+                            padding: const EdgeInsets.only(right: 16.0),
+                            child: const Icon(Icons.delete),
+                          ),
+                          child: ListTile(
+                            title: Text(listTileContent),
+                            onTap: () {
+                              chatProvider.currentChatId = chatId;
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => const ChatScreen()),
+                              );
+                            },
+                          ),
                         )
                       : const SizedBox.shrink();
                 },
