@@ -232,9 +232,7 @@ class _ChatScreenState extends State<ChatScreen> {
                           onDismissed: (direction) {
                             // Remove item
                             chatProvider.deleteChat(chatId);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text("Chat deleted")),
-                            );
+                            _showErrorSnackBar("Chat deleted");
                           },
                           background: Container(
                             color: Colors.red,

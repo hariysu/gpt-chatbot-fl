@@ -82,6 +82,18 @@ class ChatProvider with ChangeNotifier {
 
     allChats[currentChatId]?.add(message);
 
+    // Update current chat's DateTime and re-save
+    final updatedChatId = DateTime.now().toIso8601String();
+    allChats[updatedChatId] = allChats.remove(
+        currentChatId)!; // Stores the same data as updatedChatId instead of currentChatId
+    chatBox!.delete(currentChatId); // Deletes old chat Id from chatBox
+
+    // We use sentChatId because user can choose another tab when API's response is coming
+    sentChatId = currentChatId = updatedChatId;
+
+    // Save updated chat to Hive
+    chatBox!.put(updatedChatId, allChats[updatedChatId]);
+    //print("addUserMessage: $allChats[updatedChatId]");
     _sortChatsByDate();
     notifyListeners();
   }
