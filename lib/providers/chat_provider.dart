@@ -10,7 +10,6 @@ class ChatProvider with ChangeNotifier {
   String? currentChatId;
   String? sentChatId;
   Box? chatBox;
-  Box? lastChatIdBox;
 
   ChatProvider() {
     _initHive();
@@ -18,29 +17,33 @@ class ChatProvider with ChangeNotifier {
 
   Future<void> _initHive() async {
     chatBox = await Hive.openBox('chatBox');
-    lastChatIdBox = await Hive.openBox('lastChatIdBox');
 
     /* To transform/read the data in the Hive data box called chatBox and assign it to a variable called allChats to use it Chat Screen*/
-    allChats = chatBox!.toMap().map(
-      (key, value) {
-        // Check the type and content of value
-        if (value is List) {
-          try {
-            // Convert all items if they are of type Map<String, dynamic>
-            return MapEntry(key,
-                value.map((item) => Map<String, dynamic>.from(item)).toList());
-          } catch (e) {
-            throw ('Error converting item to Map<String, dynamic>: $e');
-          }
-        }
-        // Return an empty list if conversion fails
-        return MapEntry(key, <Map<String, dynamic>>[]);
-      },
-    );
-    // Restore currentChatId from lastChatId(To open user's last chat screen)
-    currentChatId = lastChatIdBox!.get('lastChatId');
-    print(currentChatId);
+    allChats = _convertHiveDataToMap(chatBox!.toMap());
+    // Sort chats by DateTime (keys) so the newest chat appears first
+    _sortChatsByDate();
+
+    // Set currentChatId to the most recent chat if exists
+    currentChatId = allChats.isNotEmpty ? allChats.keys.first : null;
     notifyListeners();
+  }
+
+  Map<String, List<Map<String, dynamic>>> _convertHiveDataToMap(
+      Map<dynamic, dynamic> data) {
+    return data.map((key, value) {
+      // Check the type and content of value
+      if (value is List) {
+        try {
+          // Convert all items if they are of type Map<String, dynamic>
+          return MapEntry(key,
+              value.map((item) => Map<String, dynamic>.from(item)).toList());
+        } catch (e) {
+          throw ('Error converting item to Map<String, dynamic>: $e');
+        }
+      }
+      // Return an empty list if conversion fails
+      return MapEntry(key, <Map<String, dynamic>>[]);
+    });
   }
 
   // To start a new chat
@@ -53,6 +56,7 @@ class ChatProvider with ChangeNotifier {
 
     // Save the new chat
     chatBox!.put(newChatId, allChats[newChatId]);
+    _sortChatsByDate();
     notifyListeners();
   }
 
@@ -75,10 +79,10 @@ class ChatProvider with ChangeNotifier {
             documentName: documentName ?? "")
         .toJson();
     if (currentChatId == null) startNewChat(); // for the first message
+
     allChats[currentChatId]?.add(message);
-    chatBox!.put(
-        currentChatId, allChats[currentChatId]); // Save user's message to Hive
-    sentChatId = currentChatId;
+
+    _sortChatsByDate();
     notifyListeners();
   }
 
@@ -93,11 +97,18 @@ class ChatProvider with ChangeNotifier {
           messages: allChats[sentChatId] ?? [], modelId: chosenModelId);
       allChats[sentChatId]!.addAll(chatListLegacy);
     }
-    // We use sentChatId because user can choose another tab when API's response is coming
-    chatBox!
-        .put(sentChatId, allChats[sentChatId]); // Save updated messages to Hive
-    lastChatIdBox!.put('lastChatId',
-        sentChatId); // Update the last chat ID to remember last conversation
+
+    // Update chat's DateTime and re-save
+    final updatedChatId = DateTime.now().toIso8601String();
+    allChats[updatedChatId] = allChats.remove(
+        sentChatId)!; // Stores the same data as updatedChatId instead of sentChatId
+    chatBox!.delete(sentChatId); // Deletes old chat Id from chatBox
+    currentChatId = updatedChatId;
+
+    // Save updated chat to Hive
+    chatBox!.put(updatedChatId, allChats[updatedChatId]);
+    //print("sendMessageAndGetAnswers: $allChats[updatedChatId]");
+    _sortChatsByDate();
 
     notifyListeners();
   }
@@ -111,12 +122,18 @@ class ChatProvider with ChangeNotifier {
 
       // Update currentChatId if the deleted chat is currentChatId
       if (currentChatId == chatId) {
-        currentChatId = allChats.isNotEmpty ? allChats.keys.last : null;
-        lastChatIdBox!.put('lastChatId', currentChatId);
+        currentChatId = allChats.isNotEmpty ? allChats.keys.first : null;
       }
 
       notifyListeners();
     }
+  }
+
+  // Helper function to sort chats by DateTime (keys)
+  void _sortChatsByDate() {
+    allChats = Map.fromEntries(
+      allChats.entries.toList()..sort((a, b) => b.key.compareTo(a.key)),
+    );
   }
 }
 
