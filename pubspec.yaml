@@ -48,7 +48,8 @@ dependencies:
   syncfusion_flutter_pdf: ^24.2.8
   docx_to_text: ^1.0.1
   hive_flutter: ^1.1.0
-
+  flutter_highlight: ^0.7.0
+  flutter_markdown: ^0.6.15
 
 dev_dependencies:
   flutter_test:
