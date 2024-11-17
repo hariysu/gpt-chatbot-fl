@@ -9,9 +9,6 @@ import 'package:flutter_markdown/flutter_markdown.dart';
 
 import 'package:gpt_chatbot/constants/const.dart';
 
-String? _globalContent;
-BuildContext? _globalContext;
-
 class ChatWidget extends StatelessWidget {
   const ChatWidget(
       {super.key,
@@ -29,8 +26,6 @@ class ChatWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    _globalContent = content;
-    _globalContext = context;
     // Convert Base64 data into Uint8List
     final bytes = base64Decode(image ?? "");
     return Column(
@@ -98,7 +93,8 @@ class ChatWidget extends StatelessWidget {
                         data: content,
                         selectable: true,
                         builders: {
-                          'pre': CodeBlockBuilder(), // Theme Functionality
+                          'pre': CodeBlockBuilder(
+                              content: content), // Theme Functionality
                         },
                         styleSheet: MarkdownStyleSheet(
                           h1: const TextStyle(
@@ -136,25 +132,30 @@ class ChatWidget extends StatelessWidget {
 
 // Theme Functionality
 class CodeBlockBuilder extends MarkdownElementBuilder {
+  final String content;
+  CodeBlockBuilder({required this.content});
+
   @override
   Widget visitText(text, TextStyle? preferredStyle) {
-    final language = _detectSoftwareLanguage(_globalContent ?? '');
+    final language = _detectSoftwareLanguage(content);
     // In order to select code snippet
-    return SizedBox(
-      width: double.maxFinite,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(8),
-        child: LayoutBuilder(builder: (context, constraints) {
-          return Stack(
+    return Builder(
+      builder: (context) {
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: Stack(
             children: [
-              HighlightView(
-                text.textContent,
-                language: language,
-                theme: atomOneDarkTheme,
-                padding: const EdgeInsets.all(8),
-                textStyle: const TextStyle(
-                  fontFamily: 'monospace',
-                  fontSize: 14,
+              SizedBox(
+                width: double.maxFinite,
+                child: HighlightView(
+                  text.textContent,
+                  language: language,
+                  theme: atomOneDarkTheme,
+                  padding: const EdgeInsets.all(8),
+                  textStyle: const TextStyle(
+                    fontFamily: 'monospace',
+                    fontSize: 14,
+                  ),
                 ),
               ),
               // Kopyalama ikonu
@@ -164,9 +165,9 @@ class CodeBlockBuilder extends MarkdownElementBuilder {
                 child: IconButton(
                   icon: const Icon(Icons.copy, color: Colors.white),
                   onPressed: () {
-                    // Kodun kopyalanması için işlemler
+                    // Operations for copying the code
                     Clipboard.setData(ClipboardData(text: text.textContent));
-                    ScaffoldMessenger.of(_globalContext!).showSnackBar(
+                    ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
                         content: Text('Code copied to clipboard'),
                         duration: Duration(seconds: 2),
@@ -177,9 +178,9 @@ class CodeBlockBuilder extends MarkdownElementBuilder {
                 ),
               ),
             ],
-          );
-        }),
-      ),
+          ),
+        );
+      },
     );
   }
 
