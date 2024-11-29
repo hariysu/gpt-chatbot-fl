@@ -489,16 +489,22 @@ class _ChatScreenState extends State<ChatScreen> {
           : textEditingController.text;
       _prepareForNewMessage(content);
       await chatProvider.sendMessageAndGetAnswers(
-          chosenModelId: modelsProvider.getCurrentModel);
+        chosenModelId: modelsProvider.getCurrentModel,
+        onFirstChunk: () {
+          setState(() {
+            _isTyping = false;
+          });
+        },
+        onChunkReceived: () {
+          _scrollToBottom();
+        },
+      );
     } catch (error) {
       // for API Errors
       log("error $error");
       _showErrorSnackBar(error.toString());
-    } finally {
       setState(() {
-        _isTyping = false;
-        // Scrolls after the page is loaded
-        _scrollToBottom();
+        _isTyping = false; // Only set false here in case of error
       });
     }
   }

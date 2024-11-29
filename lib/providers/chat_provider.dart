@@ -99,7 +99,11 @@ class ChatProvider with ChangeNotifier {
   }
 
   // Sends request using messages, then adds GPT responses to the messages
-  Future<void> sendMessageAndGetAnswers({required String chosenModelId}) async {
+  Future<void> sendMessageAndGetAnswers({
+    required String chosenModelId,
+    VoidCallback? onFirstChunk,
+    VoidCallback? onChunkReceived,
+  }) async {
     /* Commented out because I'm using stream now. But I'll keep it for future use.
     if (chosenModelId.toLowerCase().startsWith("gpt")) {
       List<Map<String, dynamic>> chatListLive = await ApiService.sendMessageGPT(
@@ -115,19 +119,28 @@ class ChatProvider with ChangeNotifier {
       allChats[sentChatId]!.add(assistantMessage);
 
       String accumulatedContent = '';
+      bool isFirstChunk = true;
 
       await for (final chunk in ApiService.sendMessageGPTStream(
           messages: allChats[sentChatId] ?? [], modelId: chosenModelId)) {
+        // Call onFirstChunk callback on first chunk
+        if (isFirstChunk) {
+          onFirstChunk?.call(); // similar to onFirstChunk()
+          isFirstChunk = false;
+        }
+
         // Get the new content from the chunk
         String newContent = chunk['content'] ?? '';
         accumulatedContent += newContent;
-
         // Update the message content
         assistantMessage['content'] = accumulatedContent;
         //print(assistantMessage['content']);
 
         // Add a small delay to make the streaming visible
         await Future.delayed(const Duration(milliseconds: 50));
+
+        // Call the scroll callback for each chunk(to scroll to bottom)
+        onChunkReceived?.call(); // similar to onChunkReceived()
 
         // Force UI refresh
         notifyListeners();
