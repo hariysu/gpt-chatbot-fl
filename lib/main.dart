@@ -5,12 +5,15 @@ import 'package:gpt_chatbot/screens/home_page.dart';
 import 'package:gpt_chatbot/screens/login_screen.dart';
 import 'package:gpt_chatbot/screens/signup_screen.dart';
 import 'package:gpt_chatbot/utils/routes.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:provider/provider.dart';
 
 import 'constants/const.dart';
 import 'providers/chat_provider.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Hive.initFlutter();
   runApp(const MyApp());
 }
 

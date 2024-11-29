@@ -1,9 +1,23 @@
-class ChatModel {
-  final String content;
-  final String role;
-  final String? base64Image;
-  final String? documentText;
-  final String? documentName;
+import 'package:hive_flutter/hive_flutter.dart';
+
+part 'chat_model.g.dart';
+
+@HiveType(typeId: 0)
+class ChatModel extends HiveObject {
+  @HiveField(0)
+  String content;
+
+  @HiveField(1)
+  String role;
+
+  @HiveField(2)
+  String? base64Image;
+
+  @HiveField(3)
+  String? documentText;
+
+  @HiveField(4)
+  String? documentName;
 
   ChatModel({
     required this.content,

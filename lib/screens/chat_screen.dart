@@ -17,7 +17,6 @@ import 'package:speech_to_text/speech_recognition_result.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 import 'package:syncfusion_flutter_pdf/pdf.dart';
 
-import '../models/chat_model.dart';
 import '../providers/models_provider.dart';
 import '../widgets/text_widget.dart';
 
@@ -108,7 +107,8 @@ class _ChatScreenState extends State<ChatScreen> {
               child: ListView.builder(
                 padding: const EdgeInsets.only(bottom: 10),
                 controller: _listScrollController,
-                itemCount: chatProvider.getMessages.length, //chatList.length,
+                itemCount:
+                    chatProvider.currentMessages.length, //chatList.length,
                 itemBuilder: (context, index) {
                   //log(chatProvider.getMessages.toString());
                   String relatedContent = "";
@@ -116,7 +116,8 @@ class _ChatScreenState extends State<ChatScreen> {
                   String documentNameAndExtension = "";
 
                   var messageContent =
-                      chatProvider.getMessages[index]['content'];
+                      chatProvider.currentMessages[index]['content'];
+
                   /* print(ChatModel.fromJson(
                       chatProvider.getMessages[index].content) /* .content */); */
 
@@ -143,9 +144,10 @@ class _ChatScreenState extends State<ChatScreen> {
                   // Show other messages in listview
                   return ChatWidget(
                     content: relatedContent, // chatList[index].content,
-                    role: chatProvider.getMessages[index]
+                    role: chatProvider.currentMessages[index]
                         ['role'], //chatList[index].role,
-                    shouldAnimate: chatProvider.getMessages.length - 1 == index,
+                    shouldAnimate:
+                        chatProvider.currentMessages.length - 1 == index,
                     image: relatedImage,
                     documentName: documentNameAndExtension,
                   );
@@ -202,42 +204,79 @@ class _ChatScreenState extends State<ChatScreen> {
     return Drawer(
       child: Padding(
         padding: const EdgeInsets.only(top: 40),
-        child: ListView.builder(
-          padding: EdgeInsets.zero,
-          itemCount: 5 /* chatProvider.getMessages.length */,
-          itemBuilder: (BuildContext context, int index) {
-            String? messageContent = _getMessageContent(index);
-            String listTileContent =
-                _getTruncatedMessageContent(messageContent);
-            return _buildDrawerListTile(listTileContent, context);
-          },
+        child: Column(
+          children: [
+            IconButton(
+                onPressed: () {
+                  chatProvider.startNewChat();
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const ChatScreen()),
+                  );
+                },
+                icon: const Icon(Icons.add)),
+            Expanded(
+              child: ListView.builder(
+                padding: EdgeInsets.zero,
+                itemCount: Provider.of<ChatProvider>(context, listen: true)
+                    .allChats
+                    .length, // we have to use listen true otherwise it doesn't update
+                itemBuilder: (BuildContext context, int index) {
+                  String chatId = chatProvider.allChats.keys.elementAt(index);
+                  String? listTileContent = _getMessageContentForTab(index);
+                  //String tabName = chatProvider.allChats.values.elementAt(index)
+                  return listTileContent != null
+                      ? Dismissible(
+                          key: Key(chatId),
+                          direction: DismissDirection.endToStart,
+                          onDismissed: (direction) {
+                            // Remove item
+                            chatProvider.deleteChat(chatId);
+                            _showErrorSnackBar("Chat deleted");
+                          },
+                          background: Container(
+                            color: Colors.red,
+                            alignment: Alignment.centerRight,
+                            padding: const EdgeInsets.only(right: 16.0),
+                            child: const Icon(Icons.delete),
+                          ),
+                          child: ListTile(
+                            title: Text(listTileContent, maxLines: 2),
+                            onTap: () {
+                              chatProvider.currentChatId = chatId;
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => const ChatScreen()),
+                              );
+                            },
+                            selected: chatProvider.currentChatId == chatId,
+                            selectedTileColor: Colors.blueGrey.shade500,
+                          ),
+                        )
+                      : const SizedBox.shrink();
+                },
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  String? _getMessageContent(int index) {
-    // Get the first message with content type String
-    return chatProvider.getMessages
-            .where((message) => message['content'] is String)
-            .elementAt(1)['content'] ??
-        ''; // Retrieve content from related index
-  }
-
-  String _getTruncatedMessageContent(String? messageContent) {
-    // Cut and show message content
-    return (messageContent?.length ?? 0) > 50
-        ? '${messageContent!.substring(0, 50)}...'
-        : messageContent ?? '';
-  }
-
-  ListTile _buildDrawerListTile(String listTileContent, BuildContext context) {
-    return ListTile(
-      title: Text(listTileContent),
-      onTap: () {
-        Navigator.pop(context);
-      },
-    );
+  String? _getMessageContentForTab(int index) {
+    // Get the first message with content type String to show in listview
+    var filteredMessages = chatProvider.allChats.values
+        .elementAt(index)
+        .where((message) => message['content'] is String)
+        .toList();
+    // Retrieve content from related index
+    if (filteredMessages.isNotEmpty) {
+      return filteredMessages.length > 1
+          ? filteredMessages[1]['content']
+          : null;
+    }
+    return null;
   }
 
   Widget _buildImagePreview() {
@@ -450,16 +489,22 @@ class _ChatScreenState extends State<ChatScreen> {
           : textEditingController.text;
       _prepareForNewMessage(content);
       await chatProvider.sendMessageAndGetAnswers(
-          chosenModelId: modelsProvider.getCurrentModel);
+        chosenModelId: modelsProvider.getCurrentModel,
+        onFirstChunk: () {
+          setState(() {
+            _isTyping = false;
+          });
+        },
+        onChunkReceived: () {
+          _scrollToBottom();
+        },
+      );
     } catch (error) {
       // for API Errors
       log("error $error");
       _showErrorSnackBar(error.toString());
-    } finally {
       setState(() {
-        _isTyping = false;
-        // Scrolls after the page is loaded
-        _scrollToBottom();
+        _isTyping = false; // Only set false here in case of error
       });
     }
   }
@@ -512,7 +557,7 @@ class _ChatScreenState extends State<ChatScreen> {
     await speech.stop();
     setState(() => _isListening = false);
     await _handleMessageSubmission();
-    _beginSpeaking(chatProvider.getMessages.last['content']);
+    _beginSpeaking(chatProvider.currentMessages.last['content']);
   }
 
   void _onSpeechResult(SpeechRecognitionResult result) {
