@@ -100,10 +100,38 @@ class ChatProvider with ChangeNotifier {
 
   // Sends request using messages, then adds GPT responses to the messages
   Future<void> sendMessageAndGetAnswers({required String chosenModelId}) async {
+    /* Commented out because I'm using stream now. But I'll keep it for future use.
     if (chosenModelId.toLowerCase().startsWith("gpt")) {
       List<Map<String, dynamic>> chatListLive = await ApiService.sendMessageGPT(
           messages: allChats[sentChatId] ?? [], modelId: chosenModelId);
       allChats[sentChatId]!.addAll(chatListLive);
+    } */
+    if (chosenModelId.toLowerCase().startsWith("gpt")) {
+      // Create initial assistant message
+      Map<String, dynamic> assistantMessage = {
+        'role': 'assistant',
+        'content': '',
+      };
+      allChats[sentChatId]!.add(assistantMessage);
+
+      String accumulatedContent = '';
+
+      await for (final chunk in ApiService.sendMessageGPTStream(
+          messages: allChats[sentChatId] ?? [], modelId: chosenModelId)) {
+        // Get the new content from the chunk
+        String newContent = chunk['content'] ?? '';
+        accumulatedContent += newContent;
+
+        // Update the message content
+        assistantMessage['content'] = accumulatedContent;
+        //print(assistantMessage['content']);
+
+        // Add a small delay to make the streaming visible
+        await Future.delayed(const Duration(milliseconds: 50));
+
+        // Force UI refresh
+        notifyListeners();
+      }
     } else {
       List<Map<String, dynamic>> chatListLegacy = await ApiService.sendMessage(
           messages: allChats[sentChatId] ?? [], modelId: chosenModelId);

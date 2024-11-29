@@ -106,6 +106,68 @@ class ApiService {
     }
   }
 
+  // Stream version of sendMessageGPT
+  static Stream<Map<String, dynamic>> sendMessageGPTStream({
+    required List<Map<String, dynamic>> messages,
+    required String modelId,
+  }) async* {
+    // Deep copy of messages (same as in sendMessageGPT)
+    List<Map<String, dynamic>> sanitizedMessages =
+        List<Map<String, dynamic>>.from(jsonDecode(jsonEncode(messages)));
+
+    // Remove names function (same as in sendMessageGPT)
+    void removeNamesFromList(List<dynamic> list) {
+      for (var item in list) {
+        if (item is Map<String, dynamic> && item.containsKey('name')) {
+          item.remove('name');
+        }
+        if (item.containsKey('content') && item['content'] is List) {
+          removeNamesFromList(item['content']);
+        }
+      }
+    }
+
+    removeNamesFromList(sanitizedMessages);
+
+    try {
+      final response = await http.post(
+        Uri.parse("$baseUrl/chat/completions"),
+        headers: {
+          'Authorization': 'Bearer $apiKey',
+          "Content-Type": "application/json",
+        },
+        body: jsonEncode({
+          "model": modelId,
+          "messages": sanitizedMessages,
+          "stream": true, // Enable streaming
+        }),
+      );
+
+      // Process the stream of SSE events
+      final stream = response.body.split('\n');
+      for (var line in stream) {
+        if (line.startsWith('data: ') && line != 'data: [DONE]') {
+          final data = line.substring(6);
+          Map<String, dynamic> jsonResponse = json.decode(data);
+
+          if (jsonResponse['choices']?.isNotEmpty ?? false) {
+            final content = jsonResponse['choices'][0]['delta']['content'];
+            if (content != null) {
+              yield ChatModel(
+                content: content,
+                role: "assistant",
+              ).toJson();
+            }
+          }
+        }
+      }
+    } catch (error) {
+      log("error $error");
+      rethrow;
+    }
+  }
+
+  // I kept this for future use. I might need non-streaming version.
   // Send Message using ChatGPT API legacy models (/v1/completions (Legacy))
   // gpt-3.5-turbo-instruct,  babbage-002,  davinci-002
   static Future<List<Map<String, dynamic>>> sendMessage(
