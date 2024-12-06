@@ -2,12 +2,14 @@ import 'dart:convert';
 import 'dart:developer';
 import 'dart:io';
 
-import 'package:gpt_chatbot/constants/api_consts.dart';
+import 'package:gpt_chatbot/constants/openai_api_consts.dart';
 import 'package:gpt_chatbot/models/chat_model.dart';
 import 'package:gpt_chatbot/models/models_model.dart';
 import 'package:http/http.dart' as http;
 
-class ApiService {
+import '../utils/message_utils.dart';
+
+class OpenAiApiService {
   // List available models
   static Future<List<Datum>> getModels() async {
     try {
@@ -36,6 +38,7 @@ class ApiService {
     }
   }
 
+  // I kept this for future use. I might need non-streaming version.
   // Send Message using ChatGPT API live models (Provide String, document, text)
   static Future<List<Map<String, dynamic>>> sendMessageGPT(
       {required List<Map<String, dynamic>> messages,
@@ -46,27 +49,8 @@ class ApiService {
 
     /* We used jsonEncode() and then jsonDecode() to create a deep copy of messages. In this way, all nested structures were also copied. */
     // Deep copy of the original messages list to avoid modifying the provider.
-    List<Map<String, dynamic>> sanitizedMessages =
-        List<Map<String, dynamic>>.from(jsonDecode(jsonEncode(messages)));
-
-    /* The removeNamesFromList function traverses the list, checks the name key and removes it. If there are nested lists, it checks them with the same function.*/
-    void removeNamesFromList(List<dynamic> list) {
-      for (var item in list) {
-        // Check each item
-        if (item is Map<String, dynamic> && item.containsKey('name')) {
-          // If 'name' exists, remove it
-          item.remove('name');
-        }
-
-        // If there are nested lists, check them too
-        if (item.containsKey('content') && item['content'] is List) {
-          removeNamesFromList(item['content']);
-        }
-      }
-    }
-
-    // Remove 'name' fields from the deep copy
-    removeNamesFromList(sanitizedMessages);
+    var messagesWithoutName =
+        MessageUtils.sanitizeMessages(messages, isGemini: false);
 
     try {
       log("modelId $modelId");
@@ -79,7 +63,7 @@ class ApiService {
         body: jsonEncode(
           {
             "model": modelId,
-            "messages": sanitizedMessages, // We send sanitizedMessages to API
+            "messages": messagesWithoutName, // We send sanitizedMessages to API
           },
         ),
       );
@@ -96,7 +80,7 @@ class ApiService {
           (index) => ChatModel(
             content: jsonResponse["choices"][index]["message"]["content"],
             role: "assistant",
-          ).toJson(),
+          ).toJson(modelID: modelId),
         );
       }
       return messagesList;
@@ -111,23 +95,8 @@ class ApiService {
     required List<Map<String, dynamic>> messages,
     required String modelId,
   }) async* {
-    // Deep copy of messages (same as in sendMessageGPT)
-    List<Map<String, dynamic>> sanitizedMessages =
-        List<Map<String, dynamic>>.from(jsonDecode(jsonEncode(messages)));
-
-    // Remove names function (same as in sendMessageGPT)
-    void removeNamesFromList(List<dynamic> list) {
-      for (var item in list) {
-        if (item is Map<String, dynamic> && item.containsKey('name')) {
-          item.remove('name');
-        }
-        if (item.containsKey('content') && item['content'] is List) {
-          removeNamesFromList(item['content']);
-        }
-      }
-    }
-
-    removeNamesFromList(sanitizedMessages);
+    var messagesWithoutName =
+        MessageUtils.sanitizeMessages(messages, isGemini: false);
 
     try {
       final response = await http.post(
@@ -138,7 +107,7 @@ class ApiService {
         },
         body: jsonEncode({
           "model": modelId,
-          "messages": sanitizedMessages,
+          "messages": messagesWithoutName,
           "stream": true, // Enable streaming
         }),
       );
@@ -156,7 +125,7 @@ class ApiService {
               yield ChatModel(
                 content: content,
                 role: "assistant",
-              ).toJson();
+              ).toJson(modelID: modelId);
             }
           }
         }
@@ -167,7 +136,6 @@ class ApiService {
     }
   }
 
-  // I kept this for future use. I might need non-streaming version.
   // Send Message using ChatGPT API legacy models (/v1/completions (Legacy))
   // gpt-3.5-turbo-instruct,  babbage-002,  davinci-002
   static Future<List<Map<String, dynamic>>> sendMessage(
@@ -206,12 +174,12 @@ class ApiService {
           (index) => ChatModel(
             content: jsonResponse["choices"][index]["text"],
             role: "assistant",
-          ).toJson(),
+          ).toJson(modelID: modelId),
         );
       }
       return messagesList;
     } catch (error) {
-      log("error $error");
+      log("error5 $error");
       rethrow;
     }
   }

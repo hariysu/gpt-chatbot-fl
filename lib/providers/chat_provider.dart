@@ -2,7 +2,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
 import '../models/chat_model.dart';
-import '../services/api_service.dart';
+import '../services/gemini_api_service.dart';
+import '../services/openai_api_service.dart';
 
 class ChatProvider with ChangeNotifier {
   //
@@ -47,11 +48,20 @@ class ChatProvider with ChangeNotifier {
   }
 
   // To start a new chat
-  void startNewChat() {
+  void startNewChat({String? modelId}) {
     final newChatId = DateTime.now().toIso8601String();
-    allChats[newChatId] = [
-      {"role": "system", "content": "You are a helpful assistant."}
-    ];
+    if (modelId?.startsWith('gpt') == true) {
+      allChats[newChatId] = [
+        {
+          "role": "system",
+          "content": "You are a helpful assistant.",
+        }
+      ];
+    } else if (modelId?.startsWith('gemini') == true) {
+      /* parameters(system_instruction) are added to the function in GeminiApiService.sendMessageGemini() */
+      allChats[newChatId] = [];
+    }
+
     currentChatId = newChatId;
 
     // Save the new chat
@@ -70,17 +80,21 @@ class ChatProvider with ChangeNotifier {
       {required String content,
       String? base64Image,
       String? documentText,
-      String? documentName}) {
+      String? documentName,
+      String? modelId}) {
     final message = ChatModel(
             content: content,
             role: "user",
             base64Image: base64Image ?? "",
             documentText: documentText ?? "",
             documentName: documentName ?? "")
-        .toJson();
-    if (currentChatId == null) startNewChat(); // for the first message
+        .toJson(modelID: modelId);
+    if (currentChatId == null) {
+      startNewChat(modelId: modelId); // for the first message
+    }
 
     allChats[currentChatId]?.add(message);
+    //print(allChats[currentChatId]);
 
     // Update current chat's DateTime and re-save
     final updatedChatId = DateTime.now().toIso8601String();
@@ -106,11 +120,55 @@ class ChatProvider with ChangeNotifier {
   }) async {
     /* Commented out because I'm using stream now. But I'll keep it for future use.
     if (chosenModelId.toLowerCase().startsWith("gpt")) {
-      List<Map<String, dynamic>> chatListLive = await ApiService.sendMessageGPT(
+      List<Map<String, dynamic>> chatListLive = await OpenAiApiService.sendMessageGPT(
           messages: allChats[sentChatId] ?? [], modelId: chosenModelId);
       allChats[sentChatId]!.addAll(chatListLive);
-    } */
-    if (chosenModelId.toLowerCase().startsWith("gpt")) {
+    }*/
+    /* Commented out because I'm using stream now. But I'll keep it for future use.
+    if (chosenModelId.toLowerCase().startsWith("gemini")) {
+      List<Map<String, dynamic>> chatListLive =
+          await GeminiApiService.sendMessageGemini(
+        messages: allChats[sentChatId] ?? [],
+        modelId: chosenModelId,
+      );
+      allChats[sentChatId]!.addAll(chatListLive);
+    }*/
+    if (chosenModelId.toLowerCase().startsWith("gemini")) {
+      // Create initial assistant message
+      Map<String, dynamic> assistantMessage = {
+        'role': 'model',
+        'parts': [
+          {'text': ' '}
+        ],
+      };
+      allChats[sentChatId]!.add(assistantMessage);
+
+      String accumulatedContent = '';
+      bool isFirstChunk = true;
+      await for (final chunk in GeminiApiService.sendMessageGeminiStream(
+          messages: allChats[sentChatId] ?? [], modelId: chosenModelId)) {
+        // Call onFirstChunk callback on first chunk
+        if (isFirstChunk) {
+          onFirstChunk?.call(); // similar to onFirstChunk()
+          isFirstChunk = false;
+        }
+
+        // Get the new content from the chunk
+        String newContent = chunk['parts'].first['text'] ?? '';
+        accumulatedContent += newContent;
+        // Update the message content
+        assistantMessage['parts'].first['text'] = accumulatedContent;
+
+        // Add a small delay to make the streaming visible
+        await Future.delayed(const Duration(milliseconds: 50));
+
+        // Call the scroll callback for each chunk(to scroll to bottom)
+        onChunkReceived?.call(); // similar to onChunkReceived()
+
+        // Force UI refresh
+        notifyListeners();
+      }
+    } else if (chosenModelId.toLowerCase().startsWith("gpt")) {
       // Create initial assistant message
       Map<String, dynamic> assistantMessage = {
         'role': 'assistant',
@@ -121,7 +179,7 @@ class ChatProvider with ChangeNotifier {
       String accumulatedContent = '';
       bool isFirstChunk = true;
 
-      await for (final chunk in ApiService.sendMessageGPTStream(
+      await for (final chunk in OpenAiApiService.sendMessageGPTStream(
           messages: allChats[sentChatId] ?? [], modelId: chosenModelId)) {
         // Call onFirstChunk callback on first chunk
         if (isFirstChunk) {
@@ -145,9 +203,13 @@ class ChatProvider with ChangeNotifier {
         // Force UI refresh
         notifyListeners();
       }
-    } else {
-      List<Map<String, dynamic>> chatListLegacy = await ApiService.sendMessage(
-          messages: allChats[sentChatId] ?? [], modelId: chosenModelId);
+    } else if (chosenModelId.toLowerCase().startsWith("davinci") ||
+        chosenModelId.toLowerCase().startsWith("curie") ||
+        chosenModelId.toLowerCase().startsWith("babbage") ||
+        chosenModelId.toLowerCase().startsWith("ada")) {
+      List<Map<String, dynamic>> chatListLegacy =
+          await OpenAiApiService.sendMessage(
+              messages: allChats[sentChatId] ?? [], modelId: chosenModelId);
       allChats[sentChatId]!.addAll(chatListLegacy);
     }
 
