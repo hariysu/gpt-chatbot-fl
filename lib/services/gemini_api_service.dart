@@ -53,7 +53,7 @@ class GeminiApiService {
       }
       return messagesList;
     } catch (error) {
-      log("error4 $error");
+      log("errorSendMessageGemini $error");
       rethrow;
     }
   }
@@ -105,7 +105,7 @@ class GeminiApiService {
         }
       }
     } catch (error) {
-      log("errorX $error");
+      log("errorSendMessageGeminiStream $error");
       rethrow;
     }
   }
