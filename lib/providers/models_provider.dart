@@ -1,9 +1,10 @@
 import 'package:gpt_chatbot/models/models_model.dart';
-import 'package:gpt_chatbot/services/api_service.dart';
+import 'package:gpt_chatbot/services/openai_api_service.dart';
 import 'package:flutter/cupertino.dart';
 
 class ModelsProvider with ChangeNotifier {
-  String currentModel = "gpt-4o-mini";
+  //String currentModel = "gpt-4o-mini";
+  String currentModel = "gemini-1.5-flash";
 
   String get getCurrentModel {
     return currentModel;
@@ -21,7 +22,7 @@ class ModelsProvider with ChangeNotifier {
   }
 
   Future<List<Datum>> getAllModels() async {
-    modelsList = await ApiService.getModels();
+    modelsList = await OpenAiApiService.getModels();
     return modelsList;
   }
 }

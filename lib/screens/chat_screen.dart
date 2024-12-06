@@ -18,6 +18,7 @@ import 'package:speech_to_text/speech_to_text.dart';
 import 'package:syncfusion_flutter_pdf/pdf.dart';
 
 import '../providers/models_provider.dart';
+import '../utils/message_content_parser.dart';
 import '../widgets/text_widget.dart';
 
 class ChatScreen extends StatefulWidget {
@@ -110,46 +111,24 @@ class _ChatScreenState extends State<ChatScreen> {
                 itemCount:
                     chatProvider.currentMessages.length, //chatList.length,
                 itemBuilder: (context, index) {
-                  //log(chatProvider.getMessages.toString());
-                  String relatedContent = "";
-                  String relatedImage = "";
-                  String documentNameAndExtension = "";
+                  var parsedContent = MessageContentParser(
+                    messageContent: chatProvider.currentMessages[index]
+                        ['content'],
+                    messageParts: chatProvider.currentMessages[index]['parts'],
+                    index: index,
+                  ).parseContent();
 
-                  var messageContent =
-                      chatProvider.currentMessages[index]['content'];
-
-                  /* print(ChatModel.fromJson(
-                      chatProvider.getMessages[index].content) /* .content */); */
-
-                  // Check if content is of type String
-                  if (messageContent is String) {
-                    relatedContent = messageContent;
-                  }
-                  // Check if it's a document text
-                  else if (messageContent.last?['text'] != null) {
-                    relatedContent =
-                        messageContent.first['text'].split('   ').first;
-                    documentNameAndExtension = messageContent.first['name'];
-                  }
-                  // Check if it's a base64 image
-                  else if (messageContent.last?['image_url']?['url'] != null) {
-                    relatedContent = messageContent.first['text'];
-                    relatedImage =
-                        messageContent.last['image_url']['url'].split(',').last;
-                  }
-                  // Check to skip the first message
-                  if (index == 0) {
+                  // Check to skip the first assistant message(For OpenAI)
+                  if (parsedContent['skip'] == 'true') {
                     return const SizedBox.shrink();
                   }
-                  // Show other messages in listview
                   return ChatWidget(
-                    content: relatedContent, // chatList[index].content,
-                    role: chatProvider.currentMessages[index]
-                        ['role'], //chatList[index].role,
+                    content: parsedContent['content'] ?? '',
+                    role: chatProvider.currentMessages[index]['role'],
                     shouldAnimate:
                         chatProvider.currentMessages.length - 1 == index,
-                    image: relatedImage,
-                    documentName: documentNameAndExtension,
+                    image: parsedContent['image'],
+                    documentName: parsedContent['documentName'],
                   );
                 },
               ),
@@ -208,7 +187,8 @@ class _ChatScreenState extends State<ChatScreen> {
           children: [
             IconButton(
                 onPressed: () {
-                  chatProvider.startNewChat();
+                  chatProvider.startNewChat(
+                      modelId: modelsProvider.getCurrentModel);
                   Navigator.push(
                     context,
                     MaterialPageRoute(builder: (context) => const ChatScreen()),
@@ -223,7 +203,7 @@ class _ChatScreenState extends State<ChatScreen> {
                     .length, // we have to use listen true otherwise it doesn't update
                 itemBuilder: (BuildContext context, int index) {
                   String chatId = chatProvider.allChats.keys.elementAt(index);
-                  String? listTileContent = _getMessageContentForTab(index);
+                  String? listTileContent = _getTabName(index);
                   //String tabName = chatProvider.allChats.values.elementAt(index)
                   return listTileContent != null
                       ? Dismissible(
@@ -264,17 +244,22 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 
-  String? _getMessageContentForTab(int index) {
-    // Get the first message with content type String to show in listview
-    var filteredMessages = chatProvider.allChats.values
-        .elementAt(index)
-        .where((message) => message['content'] is String)
-        .toList();
-    // Retrieve content from related index
-    if (filteredMessages.isNotEmpty) {
-      return filteredMessages.length > 1
-          ? filteredMessages[1]['content']
-          : null;
+  String? _getTabName(int index) {
+    List<Map<String, dynamic>> answersOfGPT =
+        Provider.of<ChatProvider>(context, listen: true)
+            .allChats
+            .values
+            .elementAt(index);
+    if (modelsProvider.getCurrentModel.startsWith("gpt")) {
+      return answersOfGPT.firstWhere(
+        (element) => element["role"] == "assistant",
+        orElse: () => {"content": null},
+      )["content"];
+    } else if (modelsProvider.getCurrentModel.startsWith("gemini")) {
+      return answersOfGPT.firstWhere(
+        (element) => element["role"] == "model",
+        orElse: () => {"content": null},
+      )["parts"]?[0]?["text"];
     }
     return null;
   }
@@ -488,6 +473,7 @@ class _ChatScreenState extends State<ChatScreen> {
           ? textOfSpeech
           : textEditingController.text;
       _prepareForNewMessage(content);
+
       await chatProvider.sendMessageAndGetAnswers(
         chosenModelId: modelsProvider.getCurrentModel,
         onFirstChunk: () {
@@ -501,7 +487,7 @@ class _ChatScreenState extends State<ChatScreen> {
       );
     } catch (error) {
       // for API Errors
-      log("error $error");
+      log("errorA $error");
       _showErrorSnackBar(error.toString());
       setState(() {
         _isTyping = false; // Only set false here in case of error
@@ -518,6 +504,7 @@ class _ChatScreenState extends State<ChatScreen> {
         base64Image: base64Image,
         documentText: _documentText,
         documentName: _documentName,
+        modelId: modelsProvider.getCurrentModel,
       );
       textEditingController.clear();
       focusNode.unfocus();
