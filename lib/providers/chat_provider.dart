@@ -1,4 +1,5 @@
 import 'package:flutter/cupertino.dart';
+import 'package:gpt_chatbot/services/claude_api_service.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
 import '../models/chat_model.dart';
@@ -133,6 +134,22 @@ class ChatProvider with ChangeNotifier {
       );
       allChats[sentChatId]!.addAll(chatListLive);
     }*/
+    if (chosenModelId.toLowerCase().startsWith("claude")) {
+      List<Map<String, dynamic>> chatListLive =
+          await ClaudeApiService.sendMessageClaude(
+        messages: allChats[sentChatId] ?? [],
+        modelId: chosenModelId,
+      );
+      allChats[sentChatId]!.addAll(chatListLive);
+    }
+    if (chosenModelId.toLowerCase().startsWith("gemini")) {
+      List<Map<String, dynamic>> chatListLive =
+          await GeminiApiService.sendMessageGemini(
+        messages: allChats[sentChatId] ?? [],
+        modelId: chosenModelId,
+      );
+      allChats[sentChatId]!.addAll(chatListLive);
+    }
     if (chosenModelId.toLowerCase().startsWith("gemini")) {
       // Create initial assistant message
       Map<String, dynamic> assistantMessage = {
