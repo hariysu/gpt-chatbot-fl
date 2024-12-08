@@ -25,11 +25,12 @@ class ClaudeApiService {
         },
         body: jsonEncode({
           "model": modelId,
+          "system":
+              "You are a helpful AI assistant. Today is Mon Dec 02 2024, local time is 14 PM.",
           "messages": messagesWithoutName,
           "max_tokens": 1024,
         }),
       );
-
       Map jsonResponse = json.decode(utf8.decode(response.bodyBytes));
       if (jsonResponse['error'] != null) {
         throw HttpException(jsonResponse['error']["message"]);

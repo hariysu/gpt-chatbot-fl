@@ -55,11 +55,19 @@ class ChatProvider with ChangeNotifier {
       allChats[newChatId] = [
         {
           "role": "system",
-          "content": "You are a helpful assistant.",
+          'content': [
+            {
+              'type': 'text',
+              'text': 'You are a helpful assistant.',
+            }
+          ],
         }
       ];
     } else if (modelId?.startsWith('gemini') == true) {
       /* parameters(system_instruction) are added to the function in GeminiApiService.sendMessageGemini() */
+      allChats[newChatId] = [];
+    } else if (modelId?.startsWith('claude') == true) {
+      /* parameters(system) are added to the function in GeminiApiService.sendMessageClaude() */
       allChats[newChatId] = [];
     }
 
@@ -80,6 +88,7 @@ class ChatProvider with ChangeNotifier {
   void addUserMessage(
       {required String content,
       String? base64Image,
+      String? imageType,
       String? documentText,
       String? documentName,
       String? modelId}) {
@@ -87,6 +96,7 @@ class ChatProvider with ChangeNotifier {
             content: content,
             role: "user",
             base64Image: base64Image ?? "",
+            imageType: imageType ?? "",
             documentText: documentText ?? "",
             documentName: documentName ?? "")
         .toJson(modelID: modelId);
@@ -121,8 +131,9 @@ class ChatProvider with ChangeNotifier {
   }) async {
     /* Commented out because I'm using stream now. But I'll keep it for future use.
     if (chosenModelId.toLowerCase().startsWith("gpt")) {
-      List<Map<String, dynamic>> chatListLive = await OpenAiApiService.sendMessageGPT(
-          messages: allChats[sentChatId] ?? [], modelId: chosenModelId);
+      List<Map<String, dynamic>> chatListLive =
+          await OpenAiApiService.sendMessageGPT(
+              messages: allChats[sentChatId] ?? [], modelId: chosenModelId);
       allChats[sentChatId]!.addAll(chatListLive);
     }*/
     /* Commented out because I'm using stream now. But I'll keep it for future use.
@@ -137,14 +148,6 @@ class ChatProvider with ChangeNotifier {
     if (chosenModelId.toLowerCase().startsWith("claude")) {
       List<Map<String, dynamic>> chatListLive =
           await ClaudeApiService.sendMessageClaude(
-        messages: allChats[sentChatId] ?? [],
-        modelId: chosenModelId,
-      );
-      allChats[sentChatId]!.addAll(chatListLive);
-    }
-    if (chosenModelId.toLowerCase().startsWith("gemini")) {
-      List<Map<String, dynamic>> chatListLive =
-          await GeminiApiService.sendMessageGemini(
         messages: allChats[sentChatId] ?? [],
         modelId: chosenModelId,
       );
@@ -189,7 +192,12 @@ class ChatProvider with ChangeNotifier {
       // Create initial assistant message
       Map<String, dynamic> assistantMessage = {
         'role': 'assistant',
-        'content': '',
+        'content': [
+          {
+            "type": "text",
+            'text': ' ',
+          }
+        ],
       };
       allChats[sentChatId]!.add(assistantMessage);
 
@@ -205,11 +213,10 @@ class ChatProvider with ChangeNotifier {
         }
 
         // Get the new content from the chunk
-        String newContent = chunk['content'] ?? '';
+        String newContent = chunk['content'].first['text'] ?? '';
         accumulatedContent += newContent;
         // Update the message content
-        assistantMessage['content'] = accumulatedContent;
-        //print(assistantMessage['content']);
+        assistantMessage['content'].first['text'] = accumulatedContent;
 
         // Add a small delay to make the streaming visible
         await Future.delayed(const Duration(milliseconds: 50));
@@ -268,25 +275,3 @@ class ChatProvider with ChangeNotifier {
     );
   }
 }
-
-/* 
-allChats'i ChatGPT ile Json'a dönüştürdüğümde:
-{ 
-  "2024-10-30T12:50:16.324320": [
-    { "role": "system", "content": "You are a helpful assistant." },
-    { "role": "user", "content": "merhaba" },
-    { "role": "assistant", "content": "Merhaba! Size nasıl yardımcı olabilirim?" },
-    { "role": "user", "content": "nasilsin" },
-    { "role": "assistant", "content": "Ben bir yapay zeka olduğum için hislerim yok, ama sizinle konuşmak için buradayım! Siz nasılsınız?" }
-  ],
-  "2024-10-30T12:50:37.054498": [
-    { "role": "system", "content": "You are a helpful assistant." },
-    { "role": "user", "content": "naber" },
-    { "role": "assistant", "content": "Merhaba! Nasılsın? Size nasıl yardımcı olabilirim?" }
-  ],
-  "2024-10-30T12:52:00.866643": [
-    { "role": "system", "content": "You are a helpful assistant." },
-    { "role": "user", "content": "iyilik saglik be dostlar" },
-    { "role": "assistant", "content": "Merhaba! İyi olun, sağlıklı olun. Size nasıl yardımcı olabilirim?" }
-  ]
-} */

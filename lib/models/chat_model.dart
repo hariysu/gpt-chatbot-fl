@@ -14,15 +14,19 @@ class ChatModel extends HiveObject {
   String? base64Image;
 
   @HiveField(3)
-  String? documentText;
+  String? imageType;
 
   @HiveField(4)
+  String? documentText;
+
+  @HiveField(5)
   String? documentName;
 
   ChatModel({
     required this.content,
     required this.role,
     this.base64Image = "",
+    this.imageType = "",
     this.documentText = "",
     this.documentName = "",
   });
@@ -33,6 +37,7 @@ class ChatModel extends HiveObject {
             : json["content"],
         role: json["role"],
         base64Image: json["base64Image"] ?? "",
+        imageType: json["imageType"] ?? "",
         documentText: json["documentText"] ?? "",
         documentName: json["documentName"] ?? "",
       );
@@ -43,7 +48,12 @@ class ChatModel extends HiveObject {
       return {
         "role": role,
         if (base64Image == "" && documentText == "")
-          "content": content
+          "content": [
+            {
+              "type": "text",
+              "text": content,
+            }
+          ]
         else if (documentText != "")
           "content": [
             {
@@ -61,7 +71,39 @@ class ChatModel extends HiveObject {
             },
             {
               "type": "image_url",
-              "image_url": {"url": "data:image/jpeg;base64,$base64Image"}
+              "image_url": {"url": "data:$imageType;base64,$base64Image"}
+            }
+          ]
+      };
+    } else if (modelID.toLowerCase().startsWith("claude")) {
+      return {
+        "role": role,
+        if (base64Image == "" && documentText == "")
+          "content": [
+            {"text": content}
+          ]
+        else if (documentText != "")
+          "content": [
+            {
+              "type": "text",
+              // Use three space to be able split the content from documentText
+              "text": "$content   ${documentText!}",
+              "name": documentName,
+            }
+          ]
+        else if (base64Image != "")
+          "content": [
+            {
+              "type": "text",
+              "text": content,
+            },
+            {
+              "type": "image",
+              "source": {
+                "type": "base64",
+                "media_type": imageType,
+                "data": base64Image
+              }
             }
           ]
       };
@@ -86,7 +128,7 @@ class ChatModel extends HiveObject {
             },
             {
               "inline_data": {
-                "mime_type": "image/jpeg",
+                "mime_type": imageType,
                 "data": base64Image,
               }
             }

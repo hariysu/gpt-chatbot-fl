@@ -21,6 +21,8 @@ import '../providers/models_provider.dart';
 import '../utils/message_content_parser.dart';
 import '../widgets/text_widget.dart';
 
+import 'package:mime/mime.dart';
+
 class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key});
 
@@ -49,6 +51,8 @@ class _ChatScreenState extends State<ChatScreen> {
 
   String? _documentText;
   String? _documentName;
+
+  String? _imageType;
 
   @override
   void initState() {
@@ -254,7 +258,7 @@ class _ChatScreenState extends State<ChatScreen> {
       return answersOfGPT.firstWhere(
         (element) => element["role"] == "assistant",
         orElse: () => {"content": null},
-      )["content"];
+      )["content"]?[0]?["text"];
     } else if (modelsProvider.getCurrentModel.startsWith("gemini")) {
       return answersOfGPT.firstWhere(
         (element) => element["role"] == "model",
@@ -415,9 +419,10 @@ class _ChatScreenState extends State<ChatScreen> {
     if (pickedImage != null) {
       setState(() {
         File? imageFile = File(pickedImage.path);
-        /*if (_imageFile == null) return;*/
         // Convert image to base64
         base64Image = base64Encode(imageFile.readAsBytesSync());
+        _imageType = lookupMimeType(
+            pickedImage.path); // It is required for the Claude's API
       });
     } else {
       log('No image selected.');
@@ -502,6 +507,7 @@ class _ChatScreenState extends State<ChatScreen> {
       chatProvider.addUserMessage(
         content: content,
         base64Image: base64Image,
+        imageType: _imageType,
         documentText: _documentText,
         documentName: _documentName,
         modelId: modelsProvider.getCurrentModel,

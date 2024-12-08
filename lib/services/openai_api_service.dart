@@ -67,7 +67,6 @@ class OpenAiApiService {
           },
         ),
       );
-
       Map jsonResponse = json.decode(utf8.decode(response.bodyBytes));
       if (jsonResponse['error'] != null) {
         throw HttpException(jsonResponse['error']["message"]);
@@ -85,7 +84,7 @@ class OpenAiApiService {
       }
       return messagesList;
     } catch (error) {
-      log("error $error");
+      log("errorF $error");
       rethrow;
     }
   }
@@ -111,7 +110,6 @@ class OpenAiApiService {
           "stream": true, // Enable streaming
         }),
       );
-
       // Process the stream of SSE events
       final stream = response.body.split('\n');
       for (var line in stream) {

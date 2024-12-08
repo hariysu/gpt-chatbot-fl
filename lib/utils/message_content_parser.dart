@@ -1,5 +1,5 @@
 class MessageContentParser {
-  final dynamic messageContent;
+  final List<dynamic>? messageContent;
   final List<dynamic>? messageParts;
   final int index;
 
@@ -16,14 +16,17 @@ class MessageContentParser {
 
     // Handle GPT format
     if (messageContent != null) {
-      if (messageContent is String) {
-        relatedContent = messageContent;
-      } else if (messageContent.last?['text'] != null) {
-        relatedContent = messageContent.first['text'].split('   ').first;
-        documentNameAndExtension = messageContent.first['name'];
-      } else if (messageContent.last?['image_url']?['url'] != null) {
-        relatedContent = messageContent.first['text'];
-        relatedImage = messageContent.last['image_url']['url'].split(',').last;
+      if (messageContent?.first['text'] != null &&
+          !messageContent?.first['text']?.contains('   ') &&
+          messageContent?.length == 1) {
+        relatedContent = messageContent?.first['text'];
+      } else if (messageContent?.first['text']?.contains('   ') ?? false) {
+        relatedContent = messageContent?.first['text'].split('   ').first;
+        documentNameAndExtension = messageContent?.first['name'];
+      } else if (messageContent!.length > 1 &&
+          messageContent?.last?['image_url']?['url'] != null) {
+        relatedContent = messageContent?.first['text'];
+        relatedImage = messageContent?.last['image_url']['url'].split(',').last;
       }
 
       if (index == 0) {
