@@ -80,7 +80,10 @@ class ChatModel extends HiveObject {
         "role": role,
         if (base64Image == "" && documentText == "")
           "content": [
-            {"text": content}
+            {
+              "type": "text",
+              "text": content,
+            }
           ]
         else if (documentText != "")
           "content": [

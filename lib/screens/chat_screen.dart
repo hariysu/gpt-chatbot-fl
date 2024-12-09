@@ -116,9 +116,12 @@ class _ChatScreenState extends State<ChatScreen> {
                     chatProvider.currentMessages.length, //chatList.length,
                 itemBuilder: (context, index) {
                   var parsedContent = MessageContentParser(
-                    messageContent: chatProvider.currentMessages[index]
+                    messageOpenAi: chatProvider.currentMessages[index]
                         ['content'],
-                    messageParts: chatProvider.currentMessages[index]['parts'],
+                    messageClaude: chatProvider.currentMessages[index]
+                        ['content'],
+                    messageGemini: chatProvider.currentMessages[index]['parts'],
+                    modelId: modelsProvider.getCurrentModel,
                     index: index,
                   ).parseContent();
 
@@ -255,6 +258,11 @@ class _ChatScreenState extends State<ChatScreen> {
             .values
             .elementAt(index);
     if (modelsProvider.getCurrentModel.startsWith("gpt")) {
+      return answersOfGPT.firstWhere(
+        (element) => element["role"] == "assistant",
+        orElse: () => {"content": null},
+      )["content"]?[0]?["text"];
+    } else if (modelsProvider.getCurrentModel.startsWith("claude")) {
       return answersOfGPT.firstWhere(
         (element) => element["role"] == "assistant",
         orElse: () => {"content": null},
