@@ -3,14 +3,12 @@ class MessageContentParser {
   final List<dynamic>? messageGemini;
   final List<dynamic>? messageClaude;
   final int index;
-  final String modelId;
 
   MessageContentParser({
     this.messageOpenAi,
     this.messageGemini,
     this.messageClaude,
     required this.index,
-    required this.modelId,
   });
 
   Map<String, String?> parseContent() {

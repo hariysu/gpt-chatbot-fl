@@ -121,7 +121,6 @@ class _ChatScreenState extends State<ChatScreen> {
                     messageClaude: chatProvider.currentMessages[index]
                         ['content'],
                     messageGemini: chatProvider.currentMessages[index]['parts'],
-                    modelId: modelsProvider.getCurrentModel,
                     index: index,
                   ).parseContent();
 
