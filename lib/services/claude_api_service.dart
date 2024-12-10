@@ -68,22 +68,22 @@ class ClaudeApiService {
         },
         body: jsonEncode({
           "model": modelId,
+          "system":
+              "You are a helpful AI assistant. Today is Mon Dec 02 2024, local time is 14 PM.",
           "messages": messagesWithoutName,
           "max_tokens": 1024,
           "stream": true,
         }),
       );
-
       final stream = utf8.decode(response.bodyBytes).split('\n');
 
       for (var line in stream) {
         if (line.startsWith('data: ') && line.length > 6) {
           final data = line.substring(6);
-          if (data == "[DONE]") continue;
-
           Map<String, dynamic> jsonResponse = json.decode(data);
-          if (jsonResponse['content'] != null) {
-            final content = jsonResponse['content'][0]['text'];
+
+          if (jsonResponse['delta'] != null) {
+            final content = jsonResponse['delta']['text'];
             if (content != null) {
               yield ChatModel(
                 content: content,

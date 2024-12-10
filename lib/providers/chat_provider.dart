@@ -145,50 +145,16 @@ class ChatProvider with ChangeNotifier {
       );
       allChats[sentChatId]!.addAll(chatListLive);
     }*/
-    if (chosenModelId.toLowerCase().startsWith("claude")) {
+    // Commented out because I'm using stream now. But I'll keep it for future use.
+    /* if (chosenModelId.toLowerCase().startsWith("claude")) {
       List<Map<String, dynamic>> chatListLive =
           await ClaudeApiService.sendMessageClaude(
         messages: allChats[sentChatId] ?? [],
         modelId: chosenModelId,
       );
       allChats[sentChatId]!.addAll(chatListLive);
-    }
-    if (chosenModelId.toLowerCase().startsWith("gemini")) {
-      // Create initial assistant message
-      Map<String, dynamic> assistantMessage = {
-        'role': 'model',
-        'parts': [
-          {'text': ' '}
-        ],
-      };
-      allChats[sentChatId]!.add(assistantMessage);
-
-      String accumulatedContent = '';
-      bool isFirstChunk = true;
-      await for (final chunk in GeminiApiService.sendMessageGeminiStream(
-          messages: allChats[sentChatId] ?? [], modelId: chosenModelId)) {
-        // Call onFirstChunk callback on first chunk
-        if (isFirstChunk) {
-          onFirstChunk?.call(); // similar to onFirstChunk()
-          isFirstChunk = false;
-        }
-
-        // Get the new content from the chunk
-        String newContent = chunk['parts'].first['text'] ?? '';
-        accumulatedContent += newContent;
-        // Update the message content
-        assistantMessage['parts'].first['text'] = accumulatedContent;
-
-        // Add a small delay to make the streaming visible
-        await Future.delayed(const Duration(milliseconds: 50));
-
-        // Call the scroll callback for each chunk(to scroll to bottom)
-        onChunkReceived?.call(); // similar to onChunkReceived()
-
-        // Force UI refresh
-        notifyListeners();
-      }
-    } else if (chosenModelId.toLowerCase().startsWith("gpt")) {
+    } */
+    if (chosenModelId.toLowerCase().startsWith("gpt")) {
       // Create initial assistant message
       Map<String, dynamic> assistantMessage = {
         'role': 'assistant',
@@ -217,6 +183,79 @@ class ChatProvider with ChangeNotifier {
         accumulatedContent += newContent;
         // Update the message content
         assistantMessage['content'].first['text'] = accumulatedContent;
+
+        // Add a small delay to make the streaming visible
+        await Future.delayed(const Duration(milliseconds: 50));
+
+        // Call the scroll callback for each chunk(to scroll to bottom)
+        onChunkReceived?.call(); // similar to onChunkReceived()
+
+        // Force UI refresh
+        notifyListeners();
+      }
+    } else if (chosenModelId.toLowerCase().startsWith("claude")) {
+      // Create initial assistant message
+      Map<String, dynamic> assistantMessage = {
+        'role': 'assistant',
+        'content': [
+          {
+            "type": "text",
+            'text': '\u200B',
+          }
+        ],
+      };
+      allChats[sentChatId]!.add(assistantMessage);
+      String accumulatedContent = '';
+      bool isFirstChunk = true;
+      await for (final chunk in ClaudeApiService.sendMessageClaudeStream(
+          messages: allChats[sentChatId] ?? [], modelId: chosenModelId)) {
+        // Call onFirstChunk callback on first chunk
+        if (isFirstChunk) {
+          onFirstChunk?.call(); // similar to onFirstChunk()
+          isFirstChunk = false;
+        }
+
+        // Get the new content from the chunk
+        String newContent = chunk['content'].first['text'] ?? '';
+        accumulatedContent += newContent;
+        // Update the message content
+        assistantMessage['content'].first['text'] = accumulatedContent;
+
+        // Add a small delay to make the streaming visible
+        await Future.delayed(const Duration(milliseconds: 50));
+
+        // Call the scroll callback for each chunk(to scroll to bottom)
+        onChunkReceived?.call(); // similar to onChunkReceived()
+
+        // Force UI refresh
+        notifyListeners();
+      }
+    }
+    if (chosenModelId.toLowerCase().startsWith("gemini")) {
+      // Create initial assistant message
+      Map<String, dynamic> assistantMessage = {
+        'role': 'model',
+        'parts': [
+          {'text': ' '}
+        ],
+      };
+      allChats[sentChatId]!.add(assistantMessage);
+
+      String accumulatedContent = '';
+      bool isFirstChunk = true;
+      await for (final chunk in GeminiApiService.sendMessageGeminiStream(
+          messages: allChats[sentChatId] ?? [], modelId: chosenModelId)) {
+        // Call onFirstChunk callback on first chunk
+        if (isFirstChunk) {
+          onFirstChunk?.call(); // similar to onFirstChunk()
+          isFirstChunk = false;
+        }
+
+        // Get the new content from the chunk
+        String newContent = chunk['parts'].first['text'] ?? '';
+        accumulatedContent += newContent;
+        // Update the message content
+        assistantMessage['parts'].first['text'] = accumulatedContent;
 
         // Add a small delay to make the streaming visible
         await Future.delayed(const Duration(milliseconds: 50));
