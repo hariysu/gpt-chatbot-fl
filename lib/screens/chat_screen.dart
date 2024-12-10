@@ -256,21 +256,28 @@ class _ChatScreenState extends State<ChatScreen> {
             .allChats
             .values
             .elementAt(index);
-    if (modelsProvider.getCurrentModel.startsWith("gpt")) {
-      return answersOfGPT.firstWhere(
-        (element) => element["role"] == "assistant",
-        orElse: () => {"content": null},
-      )["content"]?[0]?["text"];
-    } else if (modelsProvider.getCurrentModel.startsWith("claude")) {
-      return answersOfGPT.firstWhere(
-        (element) => element["role"] == "assistant",
-        orElse: () => {"content": null},
-      )["content"]?[0]?["text"];
-    } else if (modelsProvider.getCurrentModel.startsWith("gemini")) {
-      return answersOfGPT.firstWhere(
-        (element) => element["role"] == "model",
-        orElse: () => {"content": null},
-      )["parts"]?[0]?["text"];
+    //print(answersOfGPT);
+    if (answersOfGPT.isNotEmpty) {
+      //OpenAI
+      if (answersOfGPT[0]['role'] == 'system') {
+        return answersOfGPT.firstWhere(
+          (element) => element["role"] == "assistant",
+          orElse: () => {"content": null},
+        )["content"]?[0]?["text"];
+      } //Claude
+      else if (answersOfGPT[0]['role'] == 'user' &&
+          answersOfGPT[0]['content'] != null) {
+        return answersOfGPT.firstWhere(
+          (element) => element["role"] == "assistant",
+          orElse: () => {"content": null},
+        )["content"]?[0]?["text"];
+      } //Gemini
+      else if (answersOfGPT[0]['parts'] != null) {
+        return answersOfGPT.firstWhere(
+          (element) => element["role"] == "model",
+          orElse: () => {"content": null},
+        )["parts"]?[0]?["text"];
+      }
     }
     return null;
   }
