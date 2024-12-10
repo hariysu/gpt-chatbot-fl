@@ -1,11 +1,9 @@
 class MessageContentParser {
-  final dynamic messageContent;
-  final List<dynamic>? messageParts;
+  final List<Map<String, dynamic>> currentMessages;
   final int index;
 
   MessageContentParser({
-    this.messageContent,
-    this.messageParts,
+    required this.currentMessages,
     required this.index,
   });
 
@@ -14,35 +12,64 @@ class MessageContentParser {
     String? relatedImage = "";
     String? documentNameAndExtension = "";
 
-    // Handle GPT format
-    if (messageContent != null) {
-      if (messageContent is String) {
-        relatedContent = messageContent;
-      } else if (messageContent.last?['text'] != null) {
-        relatedContent = messageContent.first['text'].split('   ').first;
-        documentNameAndExtension = messageContent.first['name'];
-      } else if (messageContent.last?['image_url']?['url'] != null) {
-        relatedContent = messageContent.first['text'];
-        relatedImage = messageContent.last['image_url']['url'].split(',').last;
+    //Discriminate the message type
+    List<dynamic>? messageOpenAi = currentMessages[0]['role'] == "system"
+        ? currentMessages[index]['content']
+        : null; //OpenAI
+    List<dynamic>? messageClaude = currentMessages[0]['role'] == "user"
+        ? currentMessages[index]['content']
+        : null; //Claude
+    List<dynamic>? messageGemini = currentMessages[index]['parts']; //Gemini
+
+    // Handle OpenAI format
+    if (messageOpenAi != null) {
+      if (messageOpenAi.first['text'] != null &&
+          !messageOpenAi.first['text']?.contains('   ') &&
+          messageOpenAi.length == 1) {
+        relatedContent = messageOpenAi.first['text'];
+      } else if (messageOpenAi.first['text']?.contains('   ') ?? false) {
+        relatedContent = messageOpenAi.first['text'].split('   ').first;
+        documentNameAndExtension = messageOpenAi.first['name'];
+      } else if (messageOpenAi.length > 1 &&
+          messageOpenAi.last?['image_url']?['url'] != null) {
+        relatedContent = messageOpenAi.first['text'];
+        relatedImage = messageOpenAi.last['image_url']['url'].split(',').last;
       }
 
       if (index == 0) {
         return {'skip': 'true'};
       }
     }
+
+    // Handle Claude format
+    else if (messageClaude != null) {
+      if (messageClaude.first['text'] != null &&
+          !messageClaude.first['text']?.contains('   ') &&
+          messageClaude.length == 1) {
+        relatedContent = messageClaude.first['text'];
+      } else if (messageClaude.first['text']?.contains('   ') ?? false) {
+        relatedContent = messageClaude.first['text'].split('   ').first;
+        documentNameAndExtension = messageClaude.first['name'];
+      } else if (messageClaude.length > 1 &&
+          messageClaude.last['source'] != null) {
+        relatedContent = messageClaude.first['text'];
+        relatedImage = messageClaude.last['source']['data'];
+      }
+    }
+
     // Handle Gemini format
-    else if (messageParts != null) {
-      if (messageParts?.first['text'] != null &&
-          !messageParts?.first['text']?.contains('   ') &&
-          messageParts?.length == 1) {
-        relatedContent = messageParts?.first['text'];
-      } else if (messageParts?.first['text']?.contains('   ') ?? false) {
-        relatedContent = messageParts?.first['text'].split('   ').first;
-        documentNameAndExtension = messageParts?.first['name'];
-      } else if (messageParts!.length > 1 &&
-          messageParts?.last['inline_data'] != null) {
-        relatedContent = messageParts?.first['text'];
-        relatedImage = messageParts?.last['inline_data']['data'];
+    else if (messageGemini != null) {
+      if (messageGemini.first['text'] != null &&
+          !messageGemini.first['text']?.contains('   ') &&
+          messageGemini.length == 1) {
+        relatedContent = messageGemini.first['text'];
+      } else if (messageGemini.first['text']?.contains('   ') ?? false) {
+        relatedContent = messageGemini.first['text'].split('   ').first;
+        documentNameAndExtension = messageGemini.first['name'];
+      } else if (messageGemini.length > 1 &&
+          messageGemini.last['inline_data'] != null) {
+        relatedContent = messageGemini.first['text'];
+        relatedImage = messageGemini.last['inline_data']['data'];
       }
     }
 

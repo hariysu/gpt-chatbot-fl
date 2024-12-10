@@ -21,6 +21,8 @@ import '../providers/models_provider.dart';
 import '../utils/message_content_parser.dart';
 import '../widgets/text_widget.dart';
 
+import 'package:mime/mime.dart';
+
 class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key});
 
@@ -49,6 +51,8 @@ class _ChatScreenState extends State<ChatScreen> {
 
   String? _documentText;
   String? _documentName;
+
+  String? _imageType;
 
   @override
   void initState() {
@@ -111,10 +115,10 @@ class _ChatScreenState extends State<ChatScreen> {
                 itemCount:
                     chatProvider.currentMessages.length, //chatList.length,
                 itemBuilder: (context, index) {
+                  //print(chatProvider.currentMessages[0]['role']);
+
                   var parsedContent = MessageContentParser(
-                    messageContent: chatProvider.currentMessages[index]
-                        ['content'],
-                    messageParts: chatProvider.currentMessages[index]['parts'],
+                    currentMessages: chatProvider.currentMessages,
                     index: index,
                   ).parseContent();
 
@@ -245,21 +249,33 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   String? _getTabName(int index) {
-    List<Map<String, dynamic>> answersOfGPT =
+    List<Map<String, dynamic>> answersOfGPTs =
         Provider.of<ChatProvider>(context, listen: true)
             .allChats
             .values
             .elementAt(index);
-    if (modelsProvider.getCurrentModel.startsWith("gpt")) {
-      return answersOfGPT.firstWhere(
-        (element) => element["role"] == "assistant",
-        orElse: () => {"content": null},
-      )["content"];
-    } else if (modelsProvider.getCurrentModel.startsWith("gemini")) {
-      return answersOfGPT.firstWhere(
-        (element) => element["role"] == "model",
-        orElse: () => {"content": null},
-      )["parts"]?[0]?["text"];
+    //print(answersOfGPTs);
+    if (answersOfGPTs.isNotEmpty) {
+      //OpenAI
+      if (answersOfGPTs[0]['role'] == 'system') {
+        return answersOfGPTs.firstWhere(
+          (element) => element["role"] == "assistant",
+          orElse: () => {"content": null},
+        )["content"]?[0]?["text"];
+      } //Claude
+      else if (answersOfGPTs[0]['role'] == 'user' &&
+          answersOfGPTs[0]['content'] != null) {
+        return answersOfGPTs.firstWhere(
+          (element) => element["role"] == "assistant",
+          orElse: () => {"content": null},
+        )["content"]?[0]?["text"];
+      } //Gemini
+      else if (answersOfGPTs[0]['parts'] != null) {
+        return answersOfGPTs.firstWhere(
+          (element) => element["role"] == "model",
+          orElse: () => {"content": null},
+        )["parts"]?[0]?["text"];
+      }
     }
     return null;
   }
@@ -415,9 +431,10 @@ class _ChatScreenState extends State<ChatScreen> {
     if (pickedImage != null) {
       setState(() {
         File? imageFile = File(pickedImage.path);
-        /*if (_imageFile == null) return;*/
         // Convert image to base64
         base64Image = base64Encode(imageFile.readAsBytesSync());
+        _imageType = lookupMimeType(
+            pickedImage.path); // It is required for the Claude's API
       });
     } else {
       log('No image selected.');
@@ -502,6 +519,7 @@ class _ChatScreenState extends State<ChatScreen> {
       chatProvider.addUserMessage(
         content: content,
         base64Image: base64Image,
+        imageType: _imageType,
         documentText: _documentText,
         documentName: _documentName,
         modelId: modelsProvider.getCurrentModel,
