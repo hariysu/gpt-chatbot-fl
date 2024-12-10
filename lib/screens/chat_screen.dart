@@ -115,11 +115,17 @@ class _ChatScreenState extends State<ChatScreen> {
                 itemCount:
                     chatProvider.currentMessages.length, //chatList.length,
                 itemBuilder: (context, index) {
+                  //print(chatProvider.currentMessages[0]['role']);
+
                   var parsedContent = MessageContentParser(
-                    messageOpenAi: chatProvider.currentMessages[index]
-                        ['content'],
-                    messageClaude: chatProvider.currentMessages[index]
-                        ['content'],
+                    messageOpenAi:
+                        chatProvider.currentMessages[0]['role'] == "system"
+                            ? chatProvider.currentMessages[index]['content']
+                            : null,
+                    messageClaude:
+                        chatProvider.currentMessages[0]['role'] == "user"
+                            ? chatProvider.currentMessages[index]['content']
+                            : null,
                     messageGemini: chatProvider.currentMessages[index]['parts'],
                     index: index,
                   ).parseContent();
@@ -251,29 +257,29 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   String? _getTabName(int index) {
-    List<Map<String, dynamic>> answersOfGPT =
+    List<Map<String, dynamic>> answersOfGPTs =
         Provider.of<ChatProvider>(context, listen: true)
             .allChats
             .values
             .elementAt(index);
-    //print(answersOfGPT);
-    if (answersOfGPT.isNotEmpty) {
+    //print(answersOfGPTs);
+    if (answersOfGPTs.isNotEmpty) {
       //OpenAI
-      if (answersOfGPT[0]['role'] == 'system') {
-        return answersOfGPT.firstWhere(
+      if (answersOfGPTs[0]['role'] == 'system') {
+        return answersOfGPTs.firstWhere(
           (element) => element["role"] == "assistant",
           orElse: () => {"content": null},
         )["content"]?[0]?["text"];
       } //Claude
-      else if (answersOfGPT[0]['role'] == 'user' &&
-          answersOfGPT[0]['content'] != null) {
-        return answersOfGPT.firstWhere(
+      else if (answersOfGPTs[0]['role'] == 'user' &&
+          answersOfGPTs[0]['content'] != null) {
+        return answersOfGPTs.firstWhere(
           (element) => element["role"] == "assistant",
           orElse: () => {"content": null},
         )["content"]?[0]?["text"];
       } //Gemini
-      else if (answersOfGPT[0]['parts'] != null) {
-        return answersOfGPT.firstWhere(
+      else if (answersOfGPTs[0]['parts'] != null) {
+        return answersOfGPTs.firstWhere(
           (element) => element["role"] == "model",
           orElse: () => {"content": null},
         )["parts"]?[0]?["text"];

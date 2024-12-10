@@ -4,8 +4,8 @@ import 'package:flutter/cupertino.dart';
 
 class ModelsProvider with ChangeNotifier {
   //String currentModel = "gpt-4o-mini";
-  String currentModel = "gemini-1.5-flash";
-  //String currentModel = "claude-3-5-sonnet-20241022";
+  //String currentModel = "gemini-1.5-flash";
+  String currentModel = "claude-3-5-sonnet-20241022";
 
   String get getCurrentModel {
     return currentModel;
