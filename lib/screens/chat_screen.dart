@@ -118,15 +118,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   //print(chatProvider.currentMessages[0]['role']);
 
                   var parsedContent = MessageContentParser(
-                    messageOpenAi:
-                        chatProvider.currentMessages[0]['role'] == "system"
-                            ? chatProvider.currentMessages[index]['content']
-                            : null,
-                    messageClaude:
-                        chatProvider.currentMessages[0]['role'] == "user"
-                            ? chatProvider.currentMessages[index]['content']
-                            : null,
-                    messageGemini: chatProvider.currentMessages[index]['parts'],
+                    currentMessages: chatProvider.currentMessages,
                     index: index,
                   ).parseContent();
 
