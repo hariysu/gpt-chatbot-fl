@@ -119,3 +119,6 @@ app.*.symbols
 
 # Keys
 lib/constants/api_consts.dart
+
+# FVM Version Cache
+.fvm/
